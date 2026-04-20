@@ -1198,27 +1198,63 @@ function scrollCodeToElement(el){
   }
 }
 
+// ══ IMPROVED SCROLL TO LINE WITH VISUAL HIGHLIGHT ══
 function scrollToLine(lineNum){
-  const lineH=21.875; // line-height in pixels
-  const targetTop=Math.max(0,(lineNum-2)*lineH);
+  const lineH=21.875;
+  const targetTop=Math.max(0,(lineNum-5)*lineH);
   
-  textarea.scrollTo({
-    top:targetTop,
-    behavior:'smooth'
-  });
+  textarea.scrollTop=targetTop;
   hlPre.scrollTop=targetTop;
+  
+  highlightCodeLine(lineNum);
+  textarea.focus();
+}
 
-  // Visual highlight effect
+function highlightCodeLine(lineNum){
   clearTimeout(window._hlt);
+  clearTimeout(window._hlt2);
+  
+  const lines=textarea.value.split('\n');
+  if(lineNum<0||lineNum>=lines.length)return;
+  
+  const lineH=21.875;
+  const scrollTop=textarea.scrollTop;
+  const posY=(lineNum*lineH)-scrollTop;
+  
+  // Create highlight element if not exists
+  if(!window._highlightBox){
+    window._highlightBox=document.createElement('div');
+    window._highlightBox.style.cssText=`
+      position:absolute;
+      left:0;right:0;
+      height:${lineH}px;
+      background:rgba(10,132,255,0.15);
+      border-left:3px solid rgba(10,132,255,0.8);
+      pointer-events:none;
+      transition:top 0.2s ease;
+      z-index:1;
+    `;
+    document.getElementById('editor-wrap').style.position='relative';
+    document.getElementById('editor-wrap').appendChild(window._highlightBox);
+  }
+  
+  // Position highlight box
+  window._highlightBox.style.top=`${posY+14}px`;
+  window._highlightBox.style.display='block';
+  
+  // Flash effect
   textarea.style.outline='2px solid rgba(10,132,255,0.5)';
   textarea.style.outlineOffset='-2px';
-  textarea.style.borderRadius='var(--radius-sm)';
   
+  // Hide after 1.5s
   window._hlt=setTimeout(()=>{
     textarea.style.outline='';
     textarea.style.outlineOffset='';
-    textarea.style.borderRadius='';
-  }, 800);
+  }, 1500);
+  
+  window._hlt2=setTimeout(()=>{
+    window._highlightBox.style.display='none';
+  }, 2000);
 }
 
 // ══ DRAG RESIZE — overlay approach ══
