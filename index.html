@@ -1115,97 +1115,79 @@ frame.addEventListener('load',()=>{
   });
 });
 
-// ══ FIX #1: HOVER → SYNC CODE (IMPROVED V2) ══
+// ══ FIX #1: HOVER → SYNC CODE (IMPROVED V3 - DOM-based) ══
 function scrollCodeToElement(el){
   if(!el||!el.tagName)return;
   const tag=el.tagName.toLowerCase();
   if(tag==='body'||tag==='html'||tag==='head'||tag==='br'||tag==='hr')return;
 
+  // Strategy: Get unique path to element
+  const path=[];
+  let current=el;
+  
+  while(current&&current!==fd.body){
+    const parent=current.parentNode;
+    let index=0;
+    
+    if(parent){
+      for(let i=0;i<parent.children.length;i++){
+        if(parent.children[i]===current)break;
+        if(parent.children[i].tagName.toLowerCase()===current.tagName.toLowerCase())index++;
+      }
+    }
+    
+    path.unshift({
+      tag:current.tagName.toLowerCase(),
+      index:index,
+      id:current.id,
+      class:current.className
+    });
+    
+    current=parent;
+  }
+
+  // Now search code for matching path
   const code=textarea.value;
   const lines=code.split('\n');
   let best=-1;
+  let bestScore=0;
 
-  // ── Strategy 1: ID match (most reliable) ──
-  if(el.id){
-    const idPattern=`id="${el.id}"`;
-    for(let i=0;i<lines.length;i++){
-      if(lines[i].includes(idPattern)&&lines[i].includes('<'+tag)){
-        best=i;
-        break;
-      }
-    }
-    if(best!==-1){
-      scrollToLine(best);
-      return;
-    }
-  }
+  for(let i=0;i<lines.length;i++){
+    const line=lines[i];
+    let score=0;
 
-  // ── Strategy 2: Class match (reliable) ──
-  if(el.className&&typeof el.className==='string'){
-    const classes=el.className.trim().split(/\s+/);
-    const primaryClass=classes[0];
-    if(primaryClass){
-      const classPattern=`class="[^"]*${primaryClass}`;
-      for(let i=0;i<lines.length;i++){
-        if(new RegExp(classPattern).test(lines[i])&&lines[i].includes('<'+tag)){
-          best=i;
-          break;
+    // Check main element
+    if(path.length>0){
+      const mainEl=path[path.length-1];
+      
+      if(line.includes('<'+mainEl.tag)){
+        score+=10;
+        
+        // Check ID match (highest priority)
+        if(mainEl.id&&line.includes(`id="${mainEl.id}"`)){
+          score+=50;
         }
-      }
-      if(best!==-1){
-        scrollToLine(best);
-        return;
-      }
-    }
-  }
-
-  // ── Strategy 3: Data attributes ──
-  if(el.hasAttributes()){
-    for(let attr of el.attributes){
-      if(attr.name.startsWith('data-')){
-        const pattern=`${attr.name}="${attr.value}"`;
-        for(let i=0;i<lines.length;i++){
-          if(lines[i].includes(pattern)&&lines[i].includes('<'+tag)){
-            best=i;
-            break;
+        
+        // Check class match
+        if(mainEl.class){
+          const classes=mainEl.class.split(' ');
+          for(let cls of classes){
+            if(cls.trim()&&line.includes(cls.trim())){
+              score+=20;
+              break;
+            }
           }
         }
-        if(best!==-1){
-          scrollToLine(best);
-          return;
-        }
       }
     }
-  }
 
-  // ── Strategy 4: Unique text content (for leaf elements) ──
-  if(el.children.length===0){
-    const text=(el.textContent||'').trim();
-    if(text.length>3&&text.length<100){
-      const shortText=text.slice(0,20).replace(/\s+/g,'\\s+');
-      const regex=new RegExp(`<${tag}[^>]*>[^<]*${shortText}`);
-      for(let i=0;i<lines.length;i++){
-        if(regex.test(lines[i])){
-          best=i;
-          break;
-        }
-      }
-      if(best!==-1){
-        scrollToLine(best);
-        return;
-      }
-    }
-  }
-
-  // ── Strategy 5: Fallback - first matching tag ──
-  for(let i=0;i<lines.length;i++){
-    if(lines[i].includes('<'+tag)&&!lines[i].includes('</'+tag)){
+    if(score>bestScore){
+      bestScore=score;
       best=i;
-      break;
     }
   }
 
-  if(best!==-1){
+  if(best!==-1&&bestScore>0){
     scrollToLine(best);
   }
 }
