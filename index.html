@@ -1085,11 +1085,19 @@ function doRedo(){
 // Global Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z
 document.addEventListener('keydown',e=>{
   const inTextarea=e.target===textarea;
-  const inIframe=false; // handled via frame focus
+  
+  // Ctrl+Z hoặc Cmd+Z → Undo
   if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'){
     if(inTextarea){e.preventDefault();doUndo();}
   }
-  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){
+  
+  // Ctrl+Y hoặc Cmd+Y → Redo
+  if((e.ctrlKey||e.metaKey)&&e.key==='y'){
+    if(inTextarea){e.preventDefault();doRedo();}
+  }
+  
+  // Ctrl+Shift+Z hoặc Cmd+Shift+Z → Redo
+  if((e.ctrlKey||e.metaKey)&&e.shiftKey&&e.key==='z'){
     if(inTextarea){e.preventDefault();doRedo();}
   }
 });
@@ -1222,32 +1230,36 @@ function highlightCodeLine(lineNum){
   if(lineNum<0||lineNum>=lines.length)return;
   
   const lineH=21.875;
-  const scrollTop=textarea.scrollTop;
-  const posY=(lineNum*lineH)-scrollTop;
   
   // Create highlight element if not exists
   if(!window._highlightBox){
     window._highlightBox=document.createElement('div');
     window._highlightBox.style.cssText=`
       position:absolute;
-      left:0;right:0;
+      top:0;
+      left:0;
+      right:0;
       height:${lineH}px;
-      background:rgba(10,132,255,0.15);
-      border-left:3px solid rgba(10,132,255,0.8);
+      background:rgba(10,132,255,0.2);
+      border-left:4px solid #0a84ff;
       pointer-events:none;
-      transition:top 0.2s ease;
       z-index:1;
+      transition:top 0.15s ease;
     `;
-    document.getElementById('editor-wrap').style.position='relative';
-    document.getElementById('editor-wrap').appendChild(window._highlightBox);
+    const editorWrap=document.getElementById('editor-wrap');
+    editorWrap.style.position='relative';
+    editorWrap.appendChild(window._highlightBox);
   }
   
-  // Position highlight box
-  window._highlightBox.style.top=`${posY+14}px`;
+  // Calculate exact position (padding + line height)
+  const paddingTop=14; // textarea padding-top
+  const posY=paddingTop+(lineNum*lineH);
+  
+  window._highlightBox.style.top=`${posY}px`;
   window._highlightBox.style.display='block';
   
-  // Flash effect
-  textarea.style.outline='2px solid rgba(10,132,255,0.5)';
+  // Flash effect on textarea
+  textarea.style.outline='2px solid rgba(10,132,255,0.6)';
   textarea.style.outlineOffset='-2px';
   
   // Hide after 1.5s
