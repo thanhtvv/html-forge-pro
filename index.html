@@ -1004,7 +1004,11 @@ function scheduleSync(){
 
 function syncFromPrev(){
   if(!fd)return;
-  const newVal=fd.body.innerHTML;
+  let newVal=fd.body.innerHTML;
+  // Remove recovery attributes automatically
+  newVal=newVal.replace(/\s+data-form-recovery-attached="[^"]*"/g,'');
+  newVal=newVal.replace(/\s+data-recovery[^=]*="[^"]*"/g,'');
+  
   if(newVal!==textarea.value){
     pushUndo();
     textarea.value=newVal;
