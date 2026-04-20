@@ -1236,6 +1236,7 @@ function handleFileOpen(e){
   e.target.value='';
 }
 function saveFile(){
+  lastSavedValue=textarea.value;
   const body=textarea.value||(fd?fd.body.innerHTML:'');
   const html=`<!DOCTYPE html>\n<html lang="vi">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Document</title>\n<style>\nbody{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.8;color:#1a1a2e;padding:20px 24px;margin:0}\nimg{max-width:100%;height:auto}\n</style>\n</head>\n<body>\n${body}\n</body>\n</html>`;
   const a=document.createElement('a');
@@ -1501,6 +1502,14 @@ function toast(msg){
 // Initialize undo stack with empty state
 undoStack=[''];
 initFrame();
+  // ══ UNSAVED CHANGES WARNING ══
+window.addEventListener('beforeunload', (e) => {
+  if (textarea.value !== lastSavedValue) {
+    e.preventDefault();
+    e.returnValue = '';
+    return '';
+  }
+});
 </script>
 </body>
 </html>
