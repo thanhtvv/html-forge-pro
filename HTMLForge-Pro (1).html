@@ -1,0 +1,1506 @@
+<!DOCTYPE html>
+<html lang="vi" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HTMLForge Pro — Visual HTML Editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=SF+Pro+Display:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+/* ══ LIQUID GLASS DESIGN SYSTEM ══ */
+:root,[data-theme="light"]{
+  /* Base surfaces */
+  --bg: linear-gradient(135deg, #e8eef7 0%, #d6e4f5 30%, #e2d9f3 65%, #d9eaf0 100%);
+  --bg-solid: #dce8f2;
+  --glass: rgba(255,255,255,0.55);
+  --glass-heavy: rgba(255,255,255,0.75);
+  --glass-subtle: rgba(255,255,255,0.3);
+  --glass-border: rgba(255,255,255,0.8);
+  --glass-border2: rgba(255,255,255,0.45);
+  --glass-shadow: rgba(100,130,180,0.18);
+  --glass-shadow2: rgba(80,110,160,0.12);
+
+  /* Text */
+  --text: #1a1d2e;
+  --text2: #4a5068;
+  --text3: #8892aa;
+
+  /* Accent – Apple-style teal/blue */
+  --accent: #0a84ff;
+  --accent2: #0070e0;
+  --accent-bg: rgba(10,132,255,0.12);
+  --accent-glow: rgba(10,132,255,0.35);
+  --accent-glass: rgba(10,132,255,0.18);
+
+  --green: #30d158;
+  --green-bg: rgba(48,209,88,0.12);
+  --green-glow: rgba(48,209,88,0.3);
+
+  --red: #ff453a;
+  --yellow: #ffd60a;
+
+  /* Code syntax */
+  --syn-tag:#7c3aed;--syn-attr:#b45309;--syn-val:#047857;--syn-txt:#1a1d2e;--syn-comment:#9ca3af;
+  --font-mono:'DM Mono',monospace;
+  --font-ui:'Inter',sans-serif;
+  --font-display:'Inter',sans-serif;
+
+  /* Blur levels */
+  --blur-sm: blur(8px);
+  --blur-md: blur(16px);
+  --blur-lg: blur(28px);
+  --blur-xl: blur(40px);
+
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 18px;
+  --radius-xl: 22px;
+  --radius-pill: 100px;
+}
+
+[data-theme="dark"]{
+  --bg: linear-gradient(135deg, #0d111a 0%, #111827 40%, #130d1f 70%, #0a1520 100%);
+  --bg-solid: #0e1420;
+  --glass: rgba(30,40,65,0.65);
+  --glass-heavy: rgba(35,48,75,0.85);
+  --glass-subtle: rgba(30,40,65,0.35);
+  --glass-border: rgba(255,255,255,0.14);
+  --glass-border2: rgba(255,255,255,0.08);
+  --glass-shadow: rgba(0,0,0,0.45);
+  --glass-shadow2: rgba(0,0,0,0.25);
+
+  --text: #e8eaf0;
+  --text2: #8892aa;
+  --text3: #4a5068;
+
+  --accent: #0a84ff;
+  --accent2: #409cff;
+  --accent-bg: rgba(10,132,255,0.15);
+  --accent-glow: rgba(10,132,255,0.4);
+  --accent-glass: rgba(10,132,255,0.2);
+
+  --green: #30d158;
+  --green-bg: rgba(48,209,88,0.12);
+  --green-glow: rgba(48,209,88,0.3);
+
+  --syn-tag:#c084fc;--syn-attr:#fbbf24;--syn-val:#6ee7b7;--syn-txt:#e8eaf0;--syn-comment:#555c75;
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden}
+
+body{
+  font-family:var(--font-ui);
+  color:var(--text);
+  display:flex;
+  flex-direction:column;
+  transition:background .4s,color .3s;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Animated gradient bg */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background:var(--bg);
+  z-index:-2;
+  transition:background .4s;
+}
+body::after{
+  content:'';
+  position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 800px 600px at 20% 20%, rgba(120,160,255,0.15) 0%, transparent 70%),
+    radial-gradient(ellipse 600px 500px at 80% 80%, rgba(160,120,255,0.12) 0%, transparent 70%),
+    radial-gradient(ellipse 500px 400px at 60% 10%, rgba(80,200,200,0.1) 0%, transparent 70%);
+  z-index:-1;
+  pointer-events:none;
+}
+
+/* ── GLASS MIXIN ── */
+.glass{
+  background:var(--glass);
+  backdrop-filter:var(--blur-md);
+  -webkit-backdrop-filter:var(--blur-md);
+  border:1px solid var(--glass-border);
+  box-shadow:
+    0 2px 0 0 var(--glass-border) inset,
+    0 -1px 0 0 rgba(0,0,0,0.06) inset,
+    0 8px 32px var(--glass-shadow),
+    0 2px 8px var(--glass-shadow2);
+}
+
+/* ══ HEADER ══ */
+header{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 20px;height:54px;
+  background:var(--glass-heavy);
+  backdrop-filter:var(--blur-lg);
+  -webkit-backdrop-filter:var(--blur-lg);
+  border-bottom:1px solid var(--glass-border);
+  box-shadow:0 1px 0 var(--glass-border2) inset, 0 4px 24px var(--glass-shadow);
+  flex-shrink:0;z-index:20;
+}
+
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{
+  width:34px;height:34px;
+  background:linear-gradient(145deg,#0a84ff,#5e5ce6);
+  border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:700;color:#fff;
+  box-shadow:0 0 0 1px rgba(255,255,255,0.3) inset, 0 4px 16px rgba(10,132,255,0.4);
+  position:relative;overflow:hidden;
+}
+.logo-icon::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(160deg,rgba(255,255,255,0.35) 0%,transparent 60%);
+  border-radius:inherit;
+}
+.logo-text{font-family:var(--font-display);font-size:17px;font-weight:700;letter-spacing:-0.03em}
+.logo-text span{
+  background:linear-gradient(135deg,#0a84ff,#5e5ce6);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+
+.hd-right{display:flex;align-items:center;gap:10px}
+
+/* Pills */
+.hd-pills{display:flex;gap:3px;background:var(--glass-subtle);backdrop-filter:var(--blur-sm);border:1px solid var(--glass-border2);border-radius:var(--radius-pill);padding:3px}
+.pill{
+  padding:4px 14px;border-radius:var(--radius-pill);
+  font-size:11.5px;font-weight:500;
+  border:none;background:transparent;
+  color:var(--text2);cursor:pointer;
+  transition:all .2s cubic-bezier(.4,0,.2,1);
+  font-family:var(--font-ui);
+}
+.pill:hover{color:var(--text)}
+.pill.on{
+  background:var(--glass-heavy);
+  color:var(--accent);
+  box-shadow:0 1px 0 rgba(255,255,255,0.5) inset, 0 2px 8px var(--glass-shadow);
+  border:1px solid var(--glass-border);
+}
+
+/* File buttons */
+.hd-file{display:flex;gap:4px}
+.fbt{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 12px;border-radius:var(--radius-sm);
+  border:1px solid var(--glass-border2);
+  background:var(--glass-subtle);
+  backdrop-filter:var(--blur-sm);
+  color:var(--text2);font-size:11.5px;font-weight:500;
+  cursor:pointer;transition:all .18s;
+  font-family:var(--font-ui);white-space:nowrap;
+}
+.fbt:hover{background:var(--glass);color:var(--text);border-color:var(--glass-border)}
+.fbt.save{
+  border-color:var(--green-glow);
+  background:var(--green-bg);
+  color:var(--green);
+}
+.fbt.save:hover{box-shadow:0 0 12px var(--green-glow)}
+
+/* Theme Toggle */
+.theme-toggle{
+  display:flex;align-items:center;
+  background:var(--glass-subtle);backdrop-filter:var(--blur-sm);
+  border:1px solid var(--glass-border2);border-radius:var(--radius-pill);
+  padding:3px;gap:2px;
+}
+.theme-btn{
+  padding:3px 11px;border-radius:var(--radius-pill);
+  font-size:11px;font-weight:500;
+  border:none;background:transparent;
+  color:var(--text3);cursor:pointer;
+  transition:all .2s;font-family:var(--font-ui);
+  display:flex;align-items:center;gap:4px;
+}
+.theme-btn.active{
+  background:var(--glass-heavy);color:var(--text);
+  box-shadow:0 1px 0 rgba(255,255,255,0.5) inset, 0 2px 8px var(--glass-shadow);
+}
+
+/* ══ TOOLBAR ══ */
+#toolbar{
+  display:flex;align-items:center;gap:2px;
+  padding:0 16px;height:46px;
+  background:var(--glass);
+  backdrop-filter:var(--blur-md);
+  -webkit-backdrop-filter:var(--blur-md);
+  border-bottom:1px solid var(--glass-border2);
+  box-shadow:0 1px 0 rgba(255,255,255,0.35) inset;
+  flex-shrink:0;overflow-x:auto;scrollbar-width:none;
+}
+#toolbar::-webkit-scrollbar{display:none}
+.sep{width:1px;height:18px;background:var(--glass-border);margin:0 4px;flex-shrink:0;border-radius:1px}
+
+.tb{
+  display:flex;align-items:center;justify-content:center;
+  min-width:30px;height:30px;padding:0 6px;
+  border-radius:var(--radius-sm);
+  border:1px solid transparent;
+  background:transparent;
+  color:var(--text2);cursor:pointer;
+  font-size:12px;font-weight:500;font-family:var(--font-ui);
+  transition:all .15s;flex-shrink:0;white-space:nowrap;gap:3px;
+}
+.tb:hover{
+  background:var(--glass-heavy);color:var(--text);
+  border-color:var(--glass-border);
+  box-shadow:0 1px 0 rgba(255,255,255,0.5) inset, 0 2px 6px var(--glass-shadow2);
+}
+.tb:active{transform:scale(.92)}
+.tb.hl{
+  background:var(--accent-glass);color:var(--accent);
+  border-color:rgba(10,132,255,0.3);
+  box-shadow:0 0 10px var(--accent-glow);
+}
+
+.tbs{
+  height:28px;padding:0 8px;border-radius:var(--radius-sm);
+  border:1px solid var(--glass-border2);
+  background:var(--glass-subtle);backdrop-filter:var(--blur-sm);
+  color:var(--text);font-size:11.5px;font-family:var(--font-ui);
+  cursor:pointer;outline:none;flex-shrink:0;
+  transition:border-color .2s;
+}
+.tbs:focus{border-color:var(--accent);background:var(--glass)}
+
+.tbc{
+  width:28px;height:28px;border-radius:var(--radius-sm);
+  border:1px solid var(--glass-border2);
+  background:var(--glass-subtle);
+  cursor:pointer;padding:3px;flex-shrink:0;
+  backdrop-filter:var(--blur-sm);
+}
+.lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;flex-shrink:0}
+
+/* ══ MAIN LAYOUT ══ */
+#main{display:flex;flex:1;overflow:hidden;min-height:0}
+.panel{display:flex;flex-direction:column;overflow:hidden;min-width:0}
+#lp{
+  border-right:1px solid var(--glass-border2);
+  min-width:160px;
+}
+#rp{min-width:160px}
+
+/* Resizer – FIXED */
+#resizer{
+  width:6px;
+  background:transparent;
+  cursor:col-resize;flex-shrink:0;
+  transition:background .15s;
+  position:relative;z-index:10;
+  display:flex;align-items:center;justify-content:center;
+}
+#resizer::after{
+  content:'';
+  width:2px;height:40px;
+  background:var(--glass-border);
+  border-radius:2px;
+  transition:all .2s;
+}
+#resizer:hover::after,#resizer.dragging::after{
+  background:var(--accent);height:60px;width:3px;
+  box-shadow:0 0 8px var(--accent-glow);
+}
+
+/* ══ PANEL BARS ══ */
+.pbar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 14px;height:38px;
+  background:var(--glass-subtle);
+  backdrop-filter:var(--blur-sm);
+  border-bottom:1px solid var(--glass-border2);
+  flex-shrink:0;
+}
+.ptitle{display:flex;align-items:center;gap:7px;font-size:10.5px;font-weight:600;color:var(--text3);letter-spacing:.06em;text-transform:uppercase}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent)}
+.dot.b{background:var(--green);box-shadow:0 0 8px var(--green)}
+
+.applybtn{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 13px;border-radius:var(--radius-pill);
+  border:1px solid var(--accent-glow);
+  background:var(--accent-glass);
+  color:var(--accent);font-size:11px;font-weight:600;
+  cursor:pointer;transition:all .2s;font-family:var(--font-ui);
+}
+.applybtn:hover{box-shadow:0 0 14px var(--accent-glow);background:var(--accent-bg)}
+
+/* ══ EDITOR ══ */
+#editor-wrap{flex:1;position:relative;overflow:hidden}
+#hl-pre{
+  position:absolute;inset:0;margin:0;
+  padding:14px 16px;
+  font-family:var(--font-mono);font-size:12.5px;line-height:1.75;
+  white-space:pre-wrap;word-wrap:break-word;tab-size:2;
+  overflow:hidden;pointer-events:none;
+  color:var(--syn-txt);
+  background:transparent;
+}
+#html-input{
+  position:absolute;inset:0;width:100%;height:100%;
+  padding:14px 16px;
+  font-family:var(--font-mono);font-size:12.5px;line-height:1.75;
+  border:none;outline:none;resize:none;
+  background:transparent;
+  color:transparent;caret-color:var(--accent);
+  tab-size:2;overflow:auto;z-index:2;
+  scrollbar-width:thin;scrollbar-color:rgba(100,130,180,0.25) transparent;
+}
+#html-input::placeholder{color:var(--text3);font-style:italic}
+
+/* editor area glass bg */
+#lp #editor-wrap::before{
+  content:'';position:absolute;inset:0;
+  background:rgba(255,255,255,0.08);
+  backdrop-filter:blur(2px);
+  pointer-events:none;
+}
+[data-theme="dark"] #lp #editor-wrap::before{
+  background:rgba(15,20,40,0.15);
+}
+
+#preview-frame{flex:1;width:100%;border:none;background:transparent}
+
+/* ══ OUTPUT BAR ══ */
+#obar{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 14px;
+  background:var(--glass);
+  backdrop-filter:var(--blur-md);
+  border-top:1px solid var(--glass-border2);
+  box-shadow:0 -1px 0 rgba(255,255,255,0.35) inset;
+  flex-shrink:0;
+}
+#olbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;font-weight:600;flex-shrink:0}
+#odisplay{
+  flex:1;font-family:var(--font-mono);font-size:11px;
+  padding:4px 10px;
+  border:1px solid var(--glass-border2);border-radius:var(--radius-sm);
+  background:var(--glass-subtle);color:var(--text3);
+  overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+  height:28px;line-height:20px;min-width:0;
+  transition:border-color .2s,color .2s;
+}
+#odisplay.has{color:var(--accent);border-color:rgba(10,132,255,0.35)}
+
+.obtn{
+  display:flex;align-items:center;gap:5px;
+  padding:5px 13px;border-radius:var(--radius-sm);
+  border:1px solid var(--glass-border2);
+  background:var(--glass-subtle);
+  backdrop-filter:var(--blur-sm);
+  color:var(--text2);font-size:11px;font-weight:500;
+  cursor:pointer;transition:all .2s;flex-shrink:0;
+  font-family:var(--font-ui);white-space:nowrap;
+}
+.obtn:hover{background:var(--glass);color:var(--text)}
+.obtn.cp{border-color:var(--accent-glow);background:var(--accent-glass);color:var(--accent)}
+.obtn.cp:hover{box-shadow:0 0 12px var(--accent-glow)}
+
+/* ══ SYNTAX COLORS ══ */
+.hl-tag{color:var(--syn-tag)}
+.hl-attr{color:var(--syn-attr)}
+.hl-val{color:var(--syn-val)}
+.hl-cmt{color:var(--syn-comment);font-style:italic}
+
+/* ══ AUTOCOMPLETE ══ */
+#ac-drop{
+  display:none;position:fixed;z-index:8000;
+  background:var(--glass-heavy);
+  backdrop-filter:var(--blur-xl);
+  -webkit-backdrop-filter:var(--blur-xl);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius-lg);
+  box-shadow:0 2px 0 rgba(255,255,255,0.5) inset, 0 16px 48px var(--glass-shadow);
+  overflow:hidden;min-width:220px;max-width:300px;max-height:220px;overflow-y:auto;
+}
+#ac-drop.show{display:block}
+.ac-item{
+  display:flex;align-items:center;gap:9px;
+  padding:8px 13px;cursor:pointer;
+  font-family:var(--font-mono);font-size:12px;
+  transition:background .1s;color:var(--text2);
+}
+.ac-item:hover,.ac-item.sel{background:var(--accent-glass);color:var(--text)}
+.ac-tag{color:var(--syn-tag);font-weight:500}
+.ac-hint{font-size:10.5px;color:var(--text3);margin-left:auto;font-family:var(--font-ui)}
+
+/* ══ LINK MODAL ══ */
+#link-modal{
+  display:none;position:fixed;inset:0;
+  background:rgba(0,0,0,.35);
+  backdrop-filter:var(--blur-lg);
+  z-index:999;align-items:center;justify-content:center;
+}
+#link-modal.show{display:flex}
+.mbox{
+  background:var(--glass-heavy);
+  backdrop-filter:var(--blur-xl);
+  -webkit-backdrop-filter:var(--blur-xl);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius-xl);
+  padding:24px 26px;width:420px;max-width:92vw;
+  box-shadow:0 2px 0 rgba(255,255,255,0.6) inset, 0 24px 80px rgba(0,0,0,0.2);
+  animation:modalIn .25s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
+
+.mtitle{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:8px}
+.mlabel{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;display:block;font-weight:600}
+.minput{
+  width:100%;padding:9px 13px;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--glass-border2);
+  background:var(--glass-subtle);
+  color:var(--text);font-family:var(--font-mono);font-size:12.5px;
+  outline:none;margin-bottom:13px;
+  transition:border-color .2s,background .2s;
+}
+.minput:focus{border-color:var(--accent);background:var(--glass);box-shadow:0 0 0 3px var(--accent-bg)}
+
+.mrow{display:flex;align-items:center;gap:8px;margin-bottom:11px}
+.mck{accent-color:var(--accent);width:14px;height:14px;cursor:pointer;flex-shrink:0}
+.mcklabel{font-size:12px;color:var(--text2);cursor:pointer}
+.mbtns{display:flex;gap:8px;justify-content:flex-end;padding-top:6px}
+.mbtn{
+  padding:8px 19px;border-radius:var(--radius-sm);
+  font-size:12px;font-weight:500;cursor:pointer;
+  transition:all .2s;font-family:var(--font-ui);
+  border:1px solid var(--glass-border2);
+  background:var(--glass-subtle);color:var(--text2);
+  backdrop-filter:var(--blur-sm);
+}
+.mbtn:hover{background:var(--glass);color:var(--text)}
+.mbtn.ok{background:var(--accent-glass);color:var(--accent);border-color:var(--accent-glow)}
+.mbtn.ok:hover{box-shadow:0 0 14px var(--accent-glow)}
+
+/* ══ LINK QUICK POPUP ══ */
+#link-popup{
+  display:none;position:fixed;z-index:9999;
+  background:var(--glass-heavy);
+  backdrop-filter:var(--blur-xl);
+  -webkit-backdrop-filter:var(--blur-xl);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius-lg);
+  padding:12px 16px;
+  box-shadow:0 2px 0 rgba(255,255,255,0.5) inset, 0 12px 40px var(--glass-shadow);
+  min-width:290px;max-width:370px;
+  animation:popIn .18s cubic-bezier(.34,1.56,.64,1);
+}
+@keyframes popIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+#link-popup.show{display:block}
+.pop-title{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:8px}
+.pop-url{
+  width:100%;padding:6px 9px;
+  border-radius:var(--radius-sm);
+  border:1px solid var(--glass-border2);
+  background:var(--glass-subtle);
+  color:var(--text);font-family:var(--font-mono);font-size:11.5px;
+  outline:none;margin-bottom:8px;transition:border-color .2s;
+}
+.pop-url:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
+.pop-row{display:flex;gap:6px}
+.pop-btn{
+  flex:1;padding:6px 0;border-radius:var(--radius-sm);
+  border:1px solid var(--glass-border2);
+  background:var(--glass-subtle);color:var(--text2);
+  font-size:11px;font-weight:500;cursor:pointer;
+  transition:all .15s;font-family:var(--font-ui);
+}
+.pop-btn:hover{color:var(--text);background:var(--glass)}
+.pop-btn.ok{background:var(--accent-glass);color:var(--accent);border-color:rgba(10,132,255,0.3)}
+.pop-btn.rm{background:rgba(255,69,58,0.1);color:#ff453a;border-color:rgba(255,69,58,0.25)}
+
+/* ══ TOAST ══ */
+#toast{
+  position:fixed;bottom:60px;left:50%;
+  transform:translateX(-50%) translateY(10px);
+  background:var(--glass-heavy);
+  backdrop-filter:var(--blur-lg);
+  border:1px solid var(--glass-border);
+  border-radius:var(--radius-pill);
+  padding:8px 20px;font-size:12px;font-weight:500;
+  color:var(--text);opacity:0;
+  transition:opacity .22s,transform .22s;
+  pointer-events:none;z-index:10000;
+  box-shadow:0 1px 0 rgba(255,255,255,0.5) inset, 0 8px 24px var(--glass-shadow);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ══ SCROLLBARS ══ */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(100,130,180,0.25);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(100,130,180,0.45)}
+
+/* ══ HOVER HIGHLIGHT for sync ══ */
+.hover-highlight-overlay{
+  position:absolute;
+  pointer-events:none;
+  border-radius:3px;
+  background:rgba(10,132,255,0.08);
+  border:1px solid rgba(10,132,255,0.3);
+  transition:all .15s;
+  z-index:3;
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">&lt;/&gt;</div>
+    <span class="logo-text">HTML<span>Forge</span></span>
+  </div>
+  <div class="hd-right">
+    <div class="hd-file">
+      <button class="fbt" onclick="openFile()" title="Mở file HTML">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 3.5A1.5 1.5 0 012.5 2h2l1.5 2H10a1.5 1.5 0 011.5 1.5v4A1.5 1.5 0 0110 11H2.5A1.5 1.5 0 011 9.5v-6z"/></svg>Mở
+      </button>
+      <button class="fbt save" onclick="saveFile()" title="Tải xuống .html">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="1" x2="6" y2="8"/><polyline points="3,5 6,8 9,5"/><line x1="1" y1="11" x2="11" y2="11"/></svg>Lưu
+      </button>
+    </div>
+    <div class="theme-toggle">
+      <button class="theme-btn active" id="btn-light" onclick="setTheme('light')">☀️ Light</button>
+      <button class="theme-btn" id="btn-dark" onclick="setTheme('dark')">🌙 Dark</button>
+    </div>
+    <div class="hd-pills">
+      <button class="pill on" id="pill-split" onclick="setLayout('split')">Split</button>
+      <button class="pill" id="pill-code" onclick="setLayout('code')">Code</button>
+      <button class="pill" id="pill-prev" onclick="setLayout('prev')">Preview</button>
+    </div>
+  </div>
+</header>
+
+<div id="toolbar">
+  <select class="tbs" style="width:110px" onchange="fmtBlock(this.value);this.value=''">
+    <option value="">Định dạng</option>
+    <option value="p">Paragraph &lt;p&gt;</option>
+    <option value="h2">Heading 2</option><option value="h3">Heading 3</option>
+    <option value="h4">Heading 4</option><option value="h1">Heading 1</option>
+    <option value="pre">Preformatted</option><option value="blockquote">Blockquote</option>
+  </select>
+  <select class="tbs" id="sel-font" style="width:88px">
+    <option value="sans-serif">Sans</option><option value="serif">Serif</option>
+    <option value="monospace">Mono</option><option value="Georgia">Georgia</option>
+    <option value="Trebuchet MS">Trebuchet</option>
+  </select>
+  <select class="tbs" id="sel-size" style="width:58px">
+    <option value="1">8px</option><option value="2">10px</option>
+    <option value="3" selected>12px</option><option value="4">14px</option>
+    <option value="5">18px</option><option value="6">24px</option><option value="7">36px</option>
+  </select>
+  <div class="sep"></div>
+  <button class="tb" id="tb-bold" title="Bold" onclick="fmt('bold')"><b>B</b></button>
+  <button class="tb" id="tb-italic" title="Italic" onclick="fmt('italic')"><i style="font-style:italic">I</i></button>
+  <button class="tb" id="tb-under" title="Underline" onclick="fmt('underline')" style="text-decoration:underline">U</button>
+  <button class="tb" id="tb-strike" title="Strikethrough" onclick="fmt('strikeThrough')" style="text-decoration:line-through;font-size:11px">S</button>
+  <div class="sep"></div>
+  <button class="tb" id="tb-jl" title="Căn trái" onclick="setAlign('left')"><svg width="14" height="11" fill="currentColor"><rect x="0" y="0" width="14" height="1.8" rx=".9"/><rect x="0" y="4.5" width="9" height="1.8" rx=".9"/><rect x="0" y="9" width="11" height="1.8" rx=".9"/></svg></button>
+  <button class="tb" id="tb-jc" title="Căn giữa" onclick="setAlign('center')"><svg width="14" height="11" fill="currentColor"><rect x="0" y="0" width="14" height="1.8" rx=".9"/><rect x="2.5" y="4.5" width="9" height="1.8" rx=".9"/><rect x="1" y="9" width="12" height="1.8" rx=".9"/></svg></button>
+  <button class="tb" id="tb-jr" title="Căn phải" onclick="setAlign('right')"><svg width="14" height="11" fill="currentColor"><rect x="0" y="0" width="14" height="1.8" rx=".9"/><rect x="5" y="4.5" width="9" height="1.8" rx=".9"/><rect x="3" y="9" width="11" height="1.8" rx=".9"/></svg></button>
+  <button class="tb" id="tb-jj" title="Justify" onclick="setAlign('justify')"><svg width="14" height="11" fill="currentColor"><rect x="0" y="0" width="14" height="1.8" rx=".9"/><rect x="0" y="4.5" width="14" height="1.8" rx=".9"/><rect x="0" y="9" width="14" height="1.8" rx=".9"/></svg></button>
+  <div class="sep"></div>
+  <button class="tb" title="Bullet list" onclick="fmt('insertUnorderedList')"><svg width="14" height="11" fill="currentColor"><circle cx="1.5" cy="1.5" r="1.5"/><rect x="4.5" y=".5" width="9" height="2" rx="1"/><circle cx="1.5" cy="5.5" r="1.5"/><rect x="4.5" y="4.5" width="9" height="2" rx="1"/><circle cx="1.5" cy="9.5" r="1.5"/><rect x="4.5" y="8.5" width="9" height="2" rx="1"/></svg></button>
+  <button class="tb" title="Numbered list" onclick="fmt('insertOrderedList')">1—</button>
+  <button class="tb" title="Thụt lề" onclick="fmt('indent')">→|</button>
+  <button class="tb" title="Bỏ thụt lề" onclick="fmt('outdent')">|←</button>
+  <div class="sep"></div>
+  <button class="tb" id="tb-link" title="Chèn link" onclick="openLinkModal()">
+    <svg width="15" height="9" viewBox="0 0 15 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4.5H9"/><path d="M1.5 4.5a3 3 0 003 3h1"/><path d="M10 7.5h1a3 3 0 000-6h-1"/><path d="M5 1.5H4a3 3 0 000 6h1"/></svg>Link
+  </button>
+  <button class="tb" title="Xóa link" onclick="fmt('unlink')" style="font-size:10px">✕Link</button>
+  <button class="tb" title="Xóa định dạng" onclick="fmt('removeFormat')" style="font-size:10px">✕fmt</button>
+  <div class="sep"></div>
+  <button class="tb" title="Undo (Ctrl+Z)" onclick="doUndo()"><svg width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6C1.5 3.5 3.5 1.5 6.5 1.5c2 0 3.5 1 4.5 2.5"/><polyline points="1.5,1.5 1.5,6 6,6"/></svg></button>
+  <button class="tb" title="Redo (Ctrl+Y)" onclick="doRedo()"><svg width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 6C11.5 3.5 9.5 1.5 6.5 1.5 4.5 1.5 3 2.5 2 4"/><polyline points="11.5,1.5 11.5,6 7,6"/></svg></button>
+  <div class="sep"></div>
+  <span class="lbl">Chữ</span>
+  <input type="color" class="tbc" value="#000000" title="Màu chữ" onchange="fmt('foreColor',this.value)">
+  <span class="lbl">Nền</span>
+  <input type="color" class="tbc" value="#ffff00" title="Màu nền chữ" onchange="fmt('hiliteColor',this.value)">
+</div>
+
+<div id="main">
+  <div class="panel" id="lp" style="width:50%;flex:none">
+    <div class="pbar">
+      <div class="ptitle"><div class="dot"></div>HTML Source</div>
+      <button class="applybtn" onclick="applyHtml()">
+        <svg width="9" height="9" viewBox="0 0 9 9" fill="currentColor"><polygon points="1,1 8,4.5 1,8"/></svg>Apply
+      </button>
+    </div>
+    <div id="editor-wrap">
+      <pre id="hl-pre"></pre>
+      <textarea id="html-input" spellcheck="false" autocomplete="off"
+        placeholder="<!-- Dán HTML vào đây · Gõ < để xem autocomplete tag -->"></textarea>
+    </div>
+  </div>
+  <div id="resizer" title="Kéo để resize · Double-click để 50/50"></div>
+  <div class="panel" id="rp" style="flex:1">
+    <div class="pbar">
+      <div class="ptitle"><div class="dot b"></div>Preview — Edit trực tiếp</div>
+      <span style="font-size:10px;color:var(--text3)">Hover → sync code · Click link → quick edit</span>
+    </div>
+    <iframe id="preview-frame" sandbox="allow-same-origin allow-scripts"></iframe>
+  </div>
+</div>
+
+<div id="obar">
+  <span id="olbl">Output</span>
+  <div id="odisplay">— nhấn Minify để tạo HTML nén —</div>
+  <button class="obtn" onclick="generateOutput()">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,4 6,8 10,4"/><line x1="6" y1="8" x2="6" y2="1"/><line x1="1" y1="11" x2="11" y2="11"/></svg>Minify
+  </button>
+  <button class="obtn cp" id="copy-btn" onclick="copyOutput()">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><path d="M8 4V2.5A1.5 1.5 0 006.5 1h-4A1.5 1.5 0 001 2.5v4A1.5 1.5 0 002.5 8H4"/></svg>Copy
+  </button>
+</div>
+
+<input type="file" id="file-input" accept=".html,.htm" style="display:none" onchange="handleFileOpen(event)">
+
+<!-- Link Modal -->
+<div id="link-modal">
+  <div class="mbox">
+    <div class="mtitle">
+      <svg width="16" height="10" viewBox="0 0 16 10" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"><path d="M6.5 5H9.5"/><path d="M1.5 5a3.5 3.5 0 003.5 3.5h1"/><path d="M11 8.5h1a3.5 3.5 0 000-7h-1"/><path d="M5 1.5H4a3.5 3.5 0 000 7h1"/></svg>
+      <span id="modal-title-text">Chèn liên kết</span>
+    </div>
+    <label class="mlabel" for="m-text">Văn bản hiển thị</label>
+    <input class="minput" id="m-text" placeholder="Nhập văn bản liên kết...">
+    <label class="mlabel" for="m-url">URL <span style="color:var(--accent)">*</span></label>
+    <input class="minput" id="m-url" placeholder="https://example.com" type="url">
+    <label class="mlabel" for="m-title">Tiêu đề (title)</label>
+    <input class="minput" id="m-title" placeholder="Mô tả ngắn khi hover...">
+    <div class="mrow"><input type="checkbox" class="mck" id="m-blank" checked><label class="mcklabel" for="m-blank">Mở tab mới — <code style="font-size:11px;color:var(--text3)">target="_blank"</code></label></div>
+    <div class="mrow"><input type="checkbox" class="mck" id="m-strong" checked><label class="mcklabel" for="m-strong">In đậm — <code style="font-size:11px;color:var(--text3)">&lt;strong&gt;</code></label></div>
+    <div style="border-top:1px solid var(--glass-border2);padding-top:12px;margin-top:4px">
+      <label class="mlabel" style="margin-bottom:7px">Preview HTML</label>
+      <div id="m-preview" style="font-family:var(--font-mono);font-size:11px;color:var(--accent);background:var(--glass-subtle);padding:9px 12px;border-radius:10px;border:1px solid var(--glass-border2);min-height:28px;word-break:break-all;line-height:1.6"></div>
+    </div>
+    <div class="mbtns" style="margin-top:14px">
+      <button class="mbtn" onclick="closeLinkModal()">Huỷ</button>
+      <button class="mbtn ok" onclick="insertLink()">Chèn liên kết</button>
+    </div>
+  </div>
+</div>
+
+<!-- Link Quick Popup -->
+<div id="link-popup">
+  <div class="pop-title">✏️ Chỉnh sửa nhanh link</div>
+  <input class="pop-url" id="pop-url" type="url" placeholder="https://example.com">
+  <div class="pop-row">
+    <button class="pop-btn ok" onclick="applyLinkPopup()">Lưu</button>
+    <button class="pop-btn" onclick="openLinkModalFromPopup()">Chi tiết</button>
+    <button class="pop-btn rm" onclick="removeLinkPopup()">Xóa</button>
+    <button class="pop-btn" onclick="closeLinkPopup()">✕</button>
+  </div>
+</div>
+
+<!-- Autocomplete -->
+<div id="ac-drop"></div>
+<div id="toast"></div>
+
+<script>
+'use strict';
+const textarea = document.getElementById('html-input');
+const frame    = document.getElementById('preview-frame');
+const odisplay = document.getElementById('odisplay');
+const hlPre    = document.getElementById('hl-pre');
+const acDrop   = document.getElementById('ac-drop');
+let fd, lastMin='', currentPopupAnchor=null;
+
+// ══ UNDO/REDO STACK — FIX #2: full manual undo stack ══
+let undoStack=[], redoStack=[];
+let lastSavedValue='';
+
+function pushUndo(){
+  const cur=textarea.value;
+  if(undoStack.length===0||undoStack[undoStack.length-1]!==cur){
+    undoStack.push(cur);
+    if(undoStack.length>200)undoStack.shift();
+    redoStack=[];
+  }
+}
+
+// ══ SELECTION SAVE — FIX #2 ══
+// Save selection in the IFRAME using serialized path so it survives modal closure
+let savedRangeData=null;
+
+function saveSel(){
+  if(!fd)return;
+  const s=frame.contentWindow.getSelection();
+  if(!s||!s.rangeCount){savedRangeData=null;return;}
+  const r=s.getRangeAt(0);
+  savedRangeData={
+    startContainer:r.startContainer,
+    startOffset:r.startOffset,
+    endContainer:r.endContainer,
+    endOffset:r.endOffset,
+    collapsed:r.collapsed
+  };
+}
+
+function restSel(){
+  if(!fd||!savedRangeData)return;
+  try{
+    frame.contentWindow.focus();
+    const s=frame.contentWindow.getSelection();
+    s.removeAllRanges();
+    const r=fd.createRange();
+    r.setStart(savedRangeData.startContainer,savedRangeData.startOffset);
+    r.setEnd(savedRangeData.endContainer,savedRangeData.endOffset);
+    s.addRange(r);
+  }catch(e){savedRangeData=null;}
+}
+
+// ══ THEME ══
+function setTheme(t){
+  document.documentElement.setAttribute('data-theme',t);
+  document.getElementById('btn-light').classList.toggle('active',t==='light');
+  document.getElementById('btn-dark').classList.toggle('active',t==='dark');
+  localStorage.setItem('hf-theme',t);
+}
+setTheme(localStorage.getItem('hf-theme')||'light');
+
+// ══ SYNTAX HIGHLIGHT ══
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function highlight(code){
+  const parts=[],commentRe=/<!--[\s\S]*?-->/g;
+  let last=0,m;
+  commentRe.lastIndex=0;
+  while((m=commentRe.exec(code))!==null){
+    if(m.index>last)parts.push({t:'c',s:code.slice(last,m.index)});
+    parts.push({t:'k',s:m[0]});
+    last=m.index+m[0].length;
+  }
+  parts.push({t:'c',s:code.slice(last)});
+  return parts.map(p=>p.t==='k'?`<span class="hl-cmt">${esc(p.s)}</span>`:hlTags(p.s)).join('');
+}
+
+function hlTags(code){
+  return code.replace(/(<\/?)([a-zA-Z][a-zA-Z0-9:-]*)([^>]*?)(\/?>)/g,(full,open,tag,attrs,close)=>{
+    const hAttrs=attrs.replace(/(\s+)([a-zA-Z:_][a-zA-Z0-9:_\-.]*)(\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*))?/g,(a,sp,name,val)=>{
+      if(!val)return`${esc(sp)}<span class="hl-attr">${esc(name)}</span>`;
+      const eq=val.match(/^(\s*=\s*)([\s\S]*)$/);
+      return`${esc(sp)}<span class="hl-attr">${esc(name)}</span>${esc(eq[1])}<span class="hl-val">${esc(eq[2])}</span>`;
+    });
+    return`<span class="hl-tag">${esc(open)}${esc(tag)}</span>${hAttrs}<span class="hl-tag">${esc(close)}</span>`;
+  });
+}
+
+function updateHL(){
+  hlPre.innerHTML=highlight(textarea.value)+'\n';
+  hlPre.scrollTop=textarea.scrollTop;
+  hlPre.scrollLeft=textarea.scrollLeft;
+}
+textarea.addEventListener('scroll',()=>{hlPre.scrollTop=textarea.scrollTop;hlPre.scrollLeft=textarea.scrollLeft;});
+
+// ══ AUTOCOMPLETE ══
+const SNIPS=[
+  {tag:'p',snip:'<p>$</p>',hint:'Đoạn văn'},
+  {tag:'h1',snip:'<h1>$</h1>',hint:'Tiêu đề 1'},
+  {tag:'h2',snip:'<h2>$</h2>',hint:'Tiêu đề 2'},
+  {tag:'h3',snip:'<h3>$</h3>',hint:'Tiêu đề 3'},
+  {tag:'h4',snip:'<h4>$</h4>',hint:'Tiêu đề 4'},
+  {tag:'a',snip:'<a href="$">text</a>',hint:'Liên kết'},
+  {tag:'img',snip:'<img src="$" alt="">',hint:'Hình ảnh'},
+  {tag:'strong',snip:'<strong>$</strong>',hint:'In đậm'},
+  {tag:'em',snip:'<em>$</em>',hint:'In nghiêng'},
+  {tag:'mark',snip:'<mark>$</mark>',hint:'Highlight'},
+  {tag:'ul',snip:'<ul>\n  <li>$</li>\n</ul>',hint:'Danh sách'},
+  {tag:'ol',snip:'<ol>\n  <li>$</li>\n</ol>',hint:'Danh sách số'},
+  {tag:'li',snip:'<li>$</li>',hint:'Mục list'},
+  {tag:'div',snip:'<div>$</div>',hint:'Khối div'},
+  {tag:'span',snip:'<span>$</span>',hint:'Inline span'},
+  {tag:'table',snip:'<table>\n  <tr>\n    <th>$</th>\n  </tr>\n  <tr>\n    <td></td>\n  </tr>\n</table>',hint:'Bảng'},
+  {tag:'blockquote',snip:'<blockquote>\n  $\n</blockquote>',hint:'Trích dẫn'},
+  {tag:'pre',snip:'<pre>$</pre>',hint:'Code khối'},
+  {tag:'code',snip:'<code>$</code>',hint:'Code inline'},
+  {tag:'br',snip:'<br>',hint:'Xuống dòng'},
+  {tag:'hr',snip:'<hr>',hint:'Đường kẻ'},
+  {tag:'figure',snip:'<figure>\n  <img src="$" alt="">\n  <figcaption></figcaption>\n</figure>',hint:'Hình+chú thích'},
+  {tag:'section',snip:'<section>\n  $\n</section>',hint:'Section'},
+  {tag:'article',snip:'<article>\n  $\n</article>',hint:'Article'},
+  {tag:'nav',snip:'<nav>\n  $\n</nav>',hint:'Navigation'},
+  {tag:'header',snip:'<header>\n  $\n</header>',hint:'Header'},
+  {tag:'footer',snip:'<footer>\n  $\n</footer>',hint:'Footer'},
+  {tag:'button',snip:'<button>$</button>',hint:'Nút bấm'},
+  {tag:'input',snip:'<input type="text" placeholder="$">',hint:'Ô nhập liệu'},
+  {tag:'iframe',snip:'<iframe src="$" width="600" height="400"></iframe>',hint:'Nhúng iframe'},
+  {tag:'video',snip:'<video src="$" controls></video>',hint:'Video'},
+  {tag:'sup',snip:'<sup>$</sup>',hint:'Chỉ số trên'},
+  {tag:'sub',snip:'<sub>$</sub>',hint:'Chỉ số dưới'},
+];
+let acList=[],acIdx=-1;
+
+function getTyping(){
+  const pos=textarea.selectionStart;
+  const m=textarea.value.slice(0,pos).match(/<([a-zA-Z0-9-]*)$/);
+  return m?m[1].toLowerCase():null;
+}
+
+function showAC(q){
+  const f=SNIPS.filter(s=>s.tag.startsWith(q));
+  if(!f.length){hideAC();return;}
+  acList=f;acIdx=0;
+  acDrop.innerHTML=f.map((s,i)=>`<div class="ac-item${i===0?' sel':''}" data-i="${i}"><span class="ac-tag">&lt;${s.tag}&gt;</span><span class="ac-hint">${s.hint}</span></div>`).join('');
+  const r=textarea.getBoundingClientRect();
+  const lines=textarea.value.slice(0,textarea.selectionStart).split('\n');
+  const lh=21.875,lnum=lines.length;
+  const cx=Math.min(r.left+14+lines[lines.length-1].length*7.5,window.innerWidth-320);
+  const cy=Math.min(r.top+lnum*lh-textarea.scrollTop+4,window.innerHeight-240);
+  acDrop.style.left=cx+'px';acDrop.style.top=cy+'px';
+  acDrop.classList.add('show');
+  acDrop.querySelectorAll('.ac-item').forEach((el,i)=>el.addEventListener('mousedown',e=>{e.preventDefault();applyAC(i);}));
+}
+
+function hideAC(){acDrop.classList.remove('show');acList=[];acIdx=-1;}
+
+function moveAC(d){
+  if(!acList.length)return;
+  acIdx=(acIdx+d+acList.length)%acList.length;
+  acDrop.querySelectorAll('.ac-item').forEach((el,i)=>el.classList.toggle('sel',i===acIdx));
+  acDrop.querySelectorAll('.ac-item')[acIdx]?.scrollIntoView({block:'nearest'});
+}
+
+function applyAC(i){
+  if(i===undefined)i=acIdx;
+  if(i<0||!acList[i]){hideAC();return;}
+  const snip=acList[i].snip;
+  const pos=textarea.selectionStart;
+  const before=textarea.value.slice(0,pos);
+  const after=textarea.value.slice(pos);
+  const lt=before.lastIndexOf('<');
+  if(lt===-1){hideAC();return;}
+  const ci=snip.indexOf('$');
+  const clean=snip.replace('$','');
+  pushUndo();
+  textarea.value=before.slice(0,lt)+clean+after;
+  const nc=lt+(ci>=0?ci:clean.length);
+  textarea.setSelectionRange(nc,nc);
+  updateHL();scheduleSync();hideAC();textarea.focus();
+}
+
+textarea.addEventListener('keydown',e=>{
+  // Ctrl+Z / Ctrl+Y handled globally
+  if(acDrop.classList.contains('show')){
+    if(e.key==='ArrowDown'){e.preventDefault();moveAC(1);return;}
+    if(e.key==='ArrowUp'){e.preventDefault();moveAC(-1);return;}
+    if(e.key==='Enter'||e.key==='Tab'){e.preventDefault();applyAC();return;}
+    if(e.key==='Escape'){hideAC();return;}
+  }
+  if(e.key==='Tab'&&!acDrop.classList.contains('show')){
+    e.preventDefault();
+    const s=textarea.selectionStart,end=textarea.selectionEnd;
+    pushUndo();
+    textarea.value=textarea.value.slice(0,s)+'  '+textarea.value.slice(end);
+    textarea.setSelectionRange(s+2,s+2);
+    updateHL();
+  }
+});
+
+let _inputTimer=null;
+textarea.addEventListener('input',()=>{
+  // Debounce undo push
+  clearTimeout(_inputTimer);
+  _inputTimer=setTimeout(pushUndo,400);
+  updateHL();scheduleSync();
+  const q=getTyping();
+  const pos=textarea.selectionStart;
+  const ch=textarea.value[pos-1-(q?q.length:0)];
+  if(q!==null&&ch==='<')showAC(q);
+  else if(q!==null&&acDrop.classList.contains('show'))showAC(q);
+  else hideAC();
+});
+
+document.addEventListener('click',e=>{
+  if(!acDrop.contains(e.target)&&e.target!==textarea)hideAC();
+});
+
+// ══ IFRAME ══
+function buildDoc(body){
+  return`<!DOCTYPE html><html><head><meta charset="UTF-8"><style>
+*{box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.8;color:#1a1a2e;padding:20px 24px;margin:0;word-wrap:break-word;background:#fff;min-height:100vh}
+h1,h2,h3,h4,h5,h6{line-height:1.3;margin:.8em 0 .4em;font-weight:700}h2{font-size:1.25em}h3{font-size:1.1em}
+p{margin:.5em 0}a{color:#2563eb;text-decoration:none;cursor:pointer}a:hover{text-decoration:underline}
+strong{font-weight:700}img{max-width:100%;height:auto;display:block;margin:8px auto;border-radius:4px}
+figure.image{margin:16px 0;text-align:center}figcaption{font-size:13px;color:#6b7280;margin-top:6px;font-style:italic}
+ul,ol{padding-left:1.6em;margin:.5em 0}li{margin:.25em 0}
+table{border-collapse:collapse;width:100%}td,th{border:1px solid #e5e7eb;padding:8px 12px}th{background:#f9fafb;font-weight:600}
+pre,code{font-family:monospace;background:#f3f4f6;padding:2px 6px;border-radius:4px}pre{padding:12px;overflow-x:auto}
+blockquote{border-left:3px solid #6366f1;margin:1em 0;padding:4px 16px;color:#6b7280}
+</style></head><body contenteditable="true" spellcheck="false">${body||''}</body></html>`;
+}
+
+function initFrame(){
+  frame.srcdoc=buildDoc('');
+  frame.onload=()=>{
+    fd=frame.contentDocument||frame.contentWindow.document;
+    fd.body.addEventListener('input',()=>{
+      syncFromPrev();
+    });
+    fd.execCommand('defaultParagraphSeparator',false,'p');
+    fd.addEventListener('selectionchange',updateToolbarState);
+    attachFrameEvents();
+    if(textarea.value)fd.body.innerHTML=textarea.value;
+  };
+}
+
+function attachFrameEvents(){
+  if(!fd)return;
+  // Click: link popup
+  fd.body.addEventListener('click',function(e){
+    const a=e.target.closest('a');
+    if(a){e.preventDefault();e.stopPropagation();openLinkPopup(a,e);return;}
+    closeLinkPopup();
+  },true);
+
+  // FIX #1: Hover → Sync Code using text-based matching + selection tracking
+  let hoverEl=null;
+  fd.body.addEventListener('mouseover',function(e){
+    const el=e.target;
+    if(el===fd.body||el===fd.documentElement)return;
+    if(el===hoverEl)return;
+    hoverEl=el;
+    scrollCodeToElement(el);
+  });
+  fd.body.addEventListener('mouseout',function(e){
+    if(e.target===hoverEl)hoverEl=null;
+  });
+
+  // FIX #1 also: selection in preview syncs code
+  fd.addEventListener('selectionchange',function(){
+    const sel=fd.getSelection();
+    if(!sel||!sel.rangeCount||sel.isCollapsed)return;
+    const range=sel.getRangeAt(0);
+    const el=range.commonAncestorContainer;
+    const node=el.nodeType===3?el.parentNode:el;
+    if(node&&node!==fd.body)scrollCodeToElement(node);
+  });
+}
+
+function applyHtml(){
+  if(!fd){initFrame();return;}
+  pushUndo();
+  fd.body.innerHTML=textarea.value;
+  toast('Đã apply vào preview ✓');
+}
+
+let _sTimer=null;
+function scheduleSync(){
+  clearTimeout(_sTimer);
+  _sTimer=setTimeout(()=>{if(fd&&fd.body)fd.body.innerHTML=textarea.value;},450);
+}
+
+function syncFromPrev(){
+  if(!fd)return;
+  const newVal=fd.body.innerHTML;
+  if(newVal!==textarea.value){
+    pushUndo();
+    textarea.value=newVal;
+    updateHL();
+  }
+}
+
+function fmt(cmd,val){
+  if(!fd)initFrame();
+  frame.contentWindow.focus();
+  fd.execCommand(cmd,false,val||null);
+  setTimeout(syncFromPrev,10);
+}
+function fmtBlock(tag){if(!tag)return;if(!fd)initFrame();frame.contentWindow.focus();fd.execCommand('formatBlock',false,tag);setTimeout(syncFromPrev,10);}
+
+function setAlign(dir){
+  if(!fd)initFrame();frame.contentWindow.focus();
+  const sel=frame.contentWindow.getSelection();if(!sel||!sel.rangeCount)return;
+  const range=sel.getRangeAt(0);
+  const BL=['P','H1','H2','H3','H4','H5','H6','LI','DIV','TD','TH','BLOCKQUOTE','PRE'];
+  const getB=node=>{if(!node)return null;if(node.nodeType===1&&BL.includes(node.nodeName))return node;return getB(node.parentNode);};
+  if(range.collapsed){const b=getB(range.commonAncestorContainer);if(b)b.style.textAlign=dir;}
+  else{
+    const sb=getB(range.startContainer),eb=getB(range.endContainer);
+    if(sb===eb){if(sb)sb.style.textAlign=dir;}
+    else{
+      const w=fd.createTreeWalker(range.commonAncestorContainer.nodeType===3?range.commonAncestorContainer.parentNode:range.commonAncestorContainer,NodeFilter.SHOW_ELEMENT,{acceptNode:n=>BL.includes(n.nodeName)?NodeFilter.FILTER_ACCEPT:NodeFilter.FILTER_SKIP});
+      let n;while((n=w.nextNode()))if(range.intersectsNode(n))n.style.textAlign=dir;
+      if(sb)sb.style.textAlign=dir;if(eb)eb.style.textAlign=dir;
+    }
+  }
+  syncFromPrev();
+  ['jl','jc','jr','jj'].forEach(id=>document.getElementById('tb-'+id).classList.remove('hl'));
+  const map={left:'jl',center:'jc',right:'jr',justify:'jj'};
+  if(map[dir])document.getElementById('tb-'+map[dir]).classList.add('hl');
+}
+
+function updateToolbarState(){
+  if(!fd)return;
+  try{['bold','italic','underline'].forEach((c,i)=>document.getElementById(['tb-bold','tb-italic','tb-under'][i]).classList.toggle('hl',fd.queryCommandState(c)));}catch(e){}
+}
+document.getElementById('sel-font').addEventListener('change',function(){if(!fd)initFrame();frame.contentWindow.focus();fd.execCommand('fontName',false,this.value);setTimeout(syncFromPrev,10);});
+document.getElementById('sel-size').addEventListener('change',function(){if(!fd)initFrame();frame.contentWindow.focus();fd.execCommand('fontSize',false,this.value);setTimeout(syncFromPrev,10);});
+
+// FIX #2: Proper undo/redo
+function doUndo(){
+  if(undoStack.length<=1){
+    // Also try native undo in frame
+    if(fd){frame.contentWindow.focus();fd.execCommand('undo');setTimeout(syncFromPrev,10);}
+    return;
+  }
+  redoStack.push(undoStack.pop());
+  const prev=undoStack[undoStack.length-1];
+  if(prev!==undefined){
+    textarea.value=prev;
+    updateHL();
+    if(fd&&fd.body)fd.body.innerHTML=prev;
+    toast('Undo ✓');
+  }
+}
+function doRedo(){
+  if(!redoStack.length){
+    if(fd){frame.contentWindow.focus();fd.execCommand('redo');setTimeout(syncFromPrev,10);}
+    return;
+  }
+  const next=redoStack.pop();
+  undoStack.push(next);
+  textarea.value=next;
+  updateHL();
+  if(fd&&fd.body)fd.body.innerHTML=next;
+  toast('Redo ✓');
+}
+
+// Global Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z
+document.addEventListener('keydown',e=>{
+  const inTextarea=e.target===textarea;
+  const inIframe=false; // handled via frame focus
+  if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'){
+    if(inTextarea){e.preventDefault();doUndo();}
+  }
+  if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){
+    if(inTextarea){e.preventDefault();doRedo();}
+  }
+});
+
+// Also handle Ctrl+Z inside iframe
+frame.addEventListener('load',()=>{
+  if(!frame.contentWindow)return;
+  frame.contentWindow.addEventListener('keydown',(e)=>{
+    if((e.ctrlKey||e.metaKey)&&!e.shiftKey&&e.key==='z'){
+      e.preventDefault();doUndo();
+    }
+    if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.shiftKey&&e.key==='z'))){
+      e.preventDefault();doRedo();
+    }
+  });
+});
+
+// ══ FIX #1: HOVER → SYNC CODE (improved) ══
+function scrollCodeToElement(el){
+  if(!el||!el.tagName)return;
+  const tag=el.tagName.toLowerCase();
+  if(tag==='body'||tag==='html')return;
+
+  const code=textarea.value;
+  const lines=code.split('\n');
+
+  // Strategy 1: match by tag + text content
+  const inner=(el.textContent||'').trim().slice(0,20).replace(/\s+/g,' ');
+  const id=el.id?`id="${el.id}"`:'';
+  const cls=el.className&&typeof el.className==='string'?el.className.trim().split(/\s+/)[0]:'';
+
+  let best=-1;
+
+  // Try id match first
+  if(id){
+    for(let i=0;i<lines.length;i++){
+      if(lines[i].includes('<'+tag)&&lines[i].includes(id)){best=i;break;}
+    }
+  }
+  // Try class match
+  if(best===-1&&cls){
+    for(let i=0;i<lines.length;i++){
+      if(lines[i].includes('<'+tag)&&lines[i].includes(cls)){best=i;break;}
+    }
+  }
+  // Try text content match
+  if(best===-1&&inner.length>2){
+    const short=inner.slice(0,10);
+    for(let i=0;i<lines.length;i++){
+      if(lines[i].includes('<'+tag)&&(lines[i].includes(short)||true)){
+        // Check nearby lines for content
+        const nearby=lines.slice(i,i+3).join('\n');
+        if(nearby.includes(short)){best=i;break;}
+      }
+    }
+  }
+  // Fallback: first tag occurrence
+  if(best===-1){
+    for(let i=0;i<lines.length;i++){
+      if(lines[i].includes('<'+tag)){best=i;break;}
+    }
+  }
+
+  if(best===-1)return;
+
+  const lineH=21.875;
+  const targetTop=Math.max(0,(best-2)*lineH);
+  textarea.scrollTo({top:targetTop,behavior:'smooth'});
+  hlPre.scrollTop=targetTop;
+
+  // Visual flash
+  clearTimeout(window._hlt);
+  textarea.style.outline='2px solid rgba(10,132,255,0.4)';
+  textarea.style.outlineOffset='-2px';
+  window._hlt=setTimeout(()=>{textarea.style.outline='';textarea.style.outlineOffset='';},600);
+}
+
+// ══ DRAG RESIZE — overlay approach ══
+(()=>{
+  const res=document.getElementById('resizer');
+  const lp=document.getElementById('lp');
+  const main=document.getElementById('main');
+  let drag=false,startX=0,startW=0;
+
+  // Create a full-screen transparent overlay that sits above everything
+  // (including iframes) while dragging — captures all mouse events reliably
+  const overlay=document.createElement('div');
+  overlay.style.cssText='display:none;position:fixed;inset:0;z-index:99999;cursor:col-resize;';
+  document.body.appendChild(overlay);
+
+  function onMouseDown(e){
+    e.preventDefault();
+    drag=true;
+    startX=e.clientX;
+    startW=lp.getBoundingClientRect().width;
+    res.classList.add('dragging');
+    // Show overlay — it sits on top of the iframe so mouse events come to us
+    overlay.style.display='block';
+    document.body.style.userSelect='none';
+  }
+
+  function onMouseMove(e){
+    if(!drag)return;
+    const mw=main.getBoundingClientRect().width;
+    const delta=e.clientX-startX;
+    const newW=Math.max(160,Math.min(mw-160-res.offsetWidth,startW+delta));
+    lp.style.width=newW+'px';
+    lp.style.flex='none';
+  }
+
+  function onMouseUp(){
+    if(!drag)return;
+    drag=false;
+    res.classList.remove('dragging');
+    overlay.style.display='none';
+    document.body.style.userSelect='';
+  }
+
+  res.addEventListener('mousedown',onMouseDown);
+  // Listen on overlay (covers iframe) AND document (covers rest)
+  overlay.addEventListener('mousemove',onMouseMove);
+  overlay.addEventListener('mouseup',onMouseUp);
+  document.addEventListener('mousemove',onMouseMove);
+  document.addEventListener('mouseup',onMouseUp);
+
+  res.addEventListener('dblclick',()=>{
+    lp.style.width='50%';
+    lp.style.flex='none';
+    toast('Reset 50/50 ✓');
+  });
+})();
+
+// ══ FILE OPEN / SAVE ══
+function openFile(){document.getElementById('file-input').click();}
+function handleFileOpen(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{
+    let c=ev.target.result;
+    const bm=c.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
+    if(bm)c=bm[1].trim();
+    pushUndo();
+    textarea.value=c;updateHL();
+    if(fd&&fd.body)fd.body.innerHTML=c;
+    toast('Đã mở: '+f.name);
+  };
+  r.readAsText(f,'UTF-8');
+  e.target.value='';
+}
+function saveFile(){
+  const body=textarea.value||(fd?fd.body.innerHTML:'');
+  const html=`<!DOCTYPE html>\n<html lang="vi">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Document</title>\n<style>\nbody{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.8;color:#1a1a2e;padding:20px 24px;margin:0}\nimg{max-width:100%;height:auto}\n</style>\n</head>\n<body>\n${body}\n</body>\n</html>`;
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
+  a.download='document.html';a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Đã lưu document.html ✓');
+}
+
+// ══ LINK MODAL — fully rewritten link logic ══
+// editingAnchor: holds a reference to the <a> DOM node being edited (null = new insert)
+let editingAnchor = null;
+
+function updLP(){
+  const url=document.getElementById('m-url').value.trim(),text=document.getElementById('m-text').value.trim();
+  const title=document.getElementById('m-title').value.trim(),blank=document.getElementById('m-blank').checked,strong=document.getElementById('m-strong').checked;
+  const pr=document.getElementById('m-preview');
+  if(!url&&!text){pr.textContent='—';return;}
+  const inner=strong?`&lt;strong&gt;${text||url}&lt;/strong&gt;`:(text||url);
+  pr.innerHTML=`&lt;a href="${url||'#'}"${title?` title="${title}"`:''}${blank?' target="_blank"':''}&gt;${inner}&lt;/a&gt;`;
+}
+['m-url','m-text','m-title'].forEach(id=>document.getElementById(id).addEventListener('input',updLP));
+['m-blank','m-strong'].forEach(id=>document.getElementById(id).addEventListener('change',updLP));
+
+// Helper: detect if cursor/selection is inside an existing <a>
+function getSelectedAnchor(){
+  if(!fd)return null;
+  const sel=frame.contentWindow.getSelection();
+  if(!sel||!sel.rangeCount)return null;
+  let n=sel.getRangeAt(0).commonAncestorContainer;
+  if(n.nodeType===3)n=n.parentNode;
+  return(n&&n.closest)?n.closest('a'):null;
+}
+
+// Opens modal. If cursor is on an existing link → edit mode. Otherwise → insert mode.
+function openLinkModal(){
+  if(!fd)initFrame();
+  editingAnchor=null; // reset
+
+  saveSel(); // always save selection first
+
+  const existingA=getSelectedAnchor();
+
+  if(existingA){
+    // ── EDIT MODE ──
+    editingAnchor=existingA;
+    document.getElementById('m-text').value=existingA.textContent.trim();
+    document.getElementById('m-url').value=existingA.getAttribute('href')||'';
+    document.getElementById('m-title').value=existingA.getAttribute('title')||'';
+    document.getElementById('m-blank').checked=existingA.getAttribute('target')==='_blank';
+    // detect bold inner
+    document.getElementById('m-strong').checked=!!existingA.querySelector('strong');
+    document.getElementById('link-modal').dataset.mode='edit';
+  }else{
+    // ── INSERT MODE ──
+    const sel=frame.contentWindow.getSelection();
+    const st=sel?sel.toString().trim():'';
+    document.getElementById('m-text').value=st;
+    document.getElementById('m-url').value='';
+    document.getElementById('m-title').value='';
+    document.getElementById('m-blank').checked=true;
+    document.getElementById('m-strong').checked=!!st;
+    document.getElementById('link-modal').dataset.mode='insert';
+  }
+
+  updLP();
+  // Update modal title + button text to reflect mode
+  const isEdit=!!editingAnchor;
+  document.getElementById('modal-title-text').textContent=isEdit?'Chỉnh sửa liên kết':'Chèn liên kết';
+  document.querySelector('#link-modal .mbtn.ok').textContent=isEdit?'Lưu thay đổi':'Chèn liên kết';
+  document.getElementById('link-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('m-url').focus(),60);
+}
+
+function closeLinkModal(){
+  document.getElementById('link-modal').classList.remove('show');
+  editingAnchor=null;
+}
+
+function insertLink(){
+  const url=document.getElementById('m-url').value.trim();
+  const text=document.getElementById('m-text').value.trim();
+  const title=document.getElementById('m-title').value.trim();
+  const blank=document.getElementById('m-blank').checked;
+  const strong=document.getElementById('m-strong').checked;
+
+  if(!url){
+    document.getElementById('m-url').style.borderColor='#ff453a';
+    setTimeout(()=>document.getElementById('m-url').style.borderColor='',1500);
+    return;
+  }
+
+  closeLinkModal();
+  if(!fd)initFrame();
+  pushUndo();
+
+  if(editingAnchor){
+    // ── UPDATE EXISTING ANCHOR IN-PLACE ──
+    editingAnchor.setAttribute('href',url);
+    if(title)editingAnchor.setAttribute('title',title);
+    else editingAnchor.removeAttribute('title');
+    if(blank)editingAnchor.setAttribute('target','_blank');
+    else editingAnchor.removeAttribute('target');
+
+    // Update inner content
+    const displayText=text||url;
+    if(strong){
+      editingAnchor.innerHTML=`<strong>${displayText}</strong>`;
+    }else{
+      editingAnchor.textContent=displayText;
+    }
+    editingAnchor=null;
+    toast('Đã cập nhật liên kết ✓');
+  }else{
+    // ── INSERT NEW ANCHOR ──
+    restSel();
+    const inner=strong?`<strong>${text||url}</strong>`:(text||url);
+    const lh=`<a href="${url}"${title?` title="${title.replace(/"/g,'&quot;')}"` :''}${blank?' target="_blank"':''}>${inner}</a>`;
+
+    const sel=frame.contentWindow.getSelection();
+    if(sel&&sel.rangeCount){
+      const r=sel.getRangeAt(0);
+      // If selection is inside an existing <a>, unwrap it first to avoid nesting
+      let n=r.commonAncestorContainer;
+      if(n.nodeType===3)n=n.parentNode;
+      const existA=n.closest?n.closest('a'):null;
+      if(existA){
+        // Replace the whole anchor
+        const tmp=fd.createElement('span');
+        tmp.innerHTML=lh;
+        existA.parentNode.replaceChild(tmp.firstChild,existA);
+      }else{
+        if(!r.collapsed)r.deleteContents();
+        const tmp=fd.createElement('span');
+        tmp.innerHTML=lh;
+        const frag=fd.createDocumentFragment();
+        while(tmp.firstChild)frag.appendChild(tmp.firstChild);
+        r.insertNode(frag);
+        r.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(r);
+      }
+    }else{
+      fd.body.innerHTML+=(' '+lh);
+    }
+    toast('Đã chèn liên kết ✓');
+  }
+
+  const newVal=fd.body.innerHTML;
+  textarea.value=newVal;
+  updateHL();
+  undoStack.push(newVal);
+}
+
+document.getElementById('link-modal').addEventListener('click',function(e){if(e.target===this)closeLinkModal();});
+document.getElementById('link-modal').addEventListener('keydown',function(e){if(e.key==='Enter'&&e.target.tagName!=='BUTTON')insertLink();if(e.key==='Escape')closeLinkModal();});
+
+// ══ LINK QUICK POPUP ══
+function openLinkPopup(anchor,ev){
+  currentPopupAnchor=anchor;
+  const pp=document.getElementById('link-popup');
+  document.getElementById('pop-url').value=anchor.getAttribute('href')||'';
+  const fr=frame.getBoundingClientRect();
+  const x=Math.min(fr.left+(ev?ev.clientX:fr.width/2),window.innerWidth-380);
+  const y=Math.min(fr.top+(ev?ev.clientY:fr.height/2)+20,window.innerHeight-160);
+  pp.style.left=x+'px';pp.style.top=y+'px';
+  pp.classList.add('show');
+  setTimeout(()=>document.getElementById('pop-url').focus(),50);
+}
+function closeLinkPopup(){document.getElementById('link-popup').classList.remove('show');currentPopupAnchor=null;}
+
+function applyLinkPopup(){
+  if(!currentPopupAnchor)return;
+  const url=document.getElementById('pop-url').value.trim();if(!url)return;
+  pushUndo();
+  currentPopupAnchor.setAttribute('href',url);
+  const newVal=fd.body.innerHTML;
+  textarea.value=newVal;updateHL();undoStack.push(newVal);
+  toast('Đã cập nhật link ✓');closeLinkPopup();
+}
+
+function removeLinkPopup(){
+  if(!currentPopupAnchor)return;
+  pushUndo();
+  const anchor=currentPopupAnchor;
+  const p=anchor.parentNode;
+  while(anchor.firstChild)p.insertBefore(anchor.firstChild,anchor);
+  p.removeChild(anchor);
+  const newVal=fd.body.innerHTML;
+  textarea.value=newVal;updateHL();undoStack.push(newVal);
+  toast('Đã xóa liên kết');closeLinkPopup();
+}
+
+// "Chi tiết" button: open full modal in EDIT mode for the popup's anchor
+function openLinkModalFromPopup(){
+  if(!currentPopupAnchor)return;
+  const anchor=currentPopupAnchor;
+  // Set editingAnchor BEFORE closing popup (closing nullifies currentPopupAnchor)
+  editingAnchor=anchor;
+  closeLinkPopup();
+
+  document.getElementById('m-url').value=anchor.getAttribute('href')||'';
+  document.getElementById('m-text').value=anchor.textContent.trim();
+  document.getElementById('m-title').value=anchor.getAttribute('title')||'';
+  document.getElementById('m-blank').checked=anchor.getAttribute('target')==='_blank';
+  document.getElementById('m-strong').checked=!!anchor.querySelector('strong');
+  document.getElementById('link-modal').dataset.mode='edit';
+  updLP();
+  document.getElementById('modal-title-text').textContent='Chỉnh sửa liên kết';
+  document.querySelector('#link-modal .mbtn.ok').textContent='Lưu thay đổi';
+  document.getElementById('link-modal').classList.add('show');
+  setTimeout(()=>document.getElementById('m-url').focus(),60);
+}
+
+document.addEventListener('click',e=>{
+  const pp=document.getElementById('link-popup');
+  if(pp.classList.contains('show')&&!pp.contains(e.target)&&e.target!==frame)closeLinkPopup();
+});
+document.getElementById('pop-url').addEventListener('keydown',e=>{if(e.key==='Enter')applyLinkPopup();if(e.key==='Escape')closeLinkPopup();});
+
+// ══ MINIFY / COPY ══
+function generateOutput(){
+  const src=textarea.value||(fd?fd.body.innerHTML:'');
+  lastMin=src.replace(/<!--[\s\S]*?-->/g,'').replace(/[ \t\r\n]+/g,' ').replace(/>\s+</g,'><').replace(/\s+>/g,'>').replace(/<\s+/g,'<').trim();
+  odisplay.textContent=lastMin||'(trống)';odisplay.title=lastMin;
+  odisplay.classList.toggle('has',!!lastMin);
+  toast('Đã minify HTML ('+lastMin.length+' ký tự)');
+}
+function copyOutput(){
+  if(!lastMin)generateOutput();if(!lastMin)return;
+  navigator.clipboard.writeText(lastMin).then(()=>{
+    const btn=document.getElementById('copy-btn');
+    btn.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg> Đã copy!';
+    setTimeout(()=>{btn.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><path d="M8 4V2.5A1.5 1.5 0 006.5 1h-4A1.5 1.5 0 001 2.5v4A1.5 1.5 0 002.5 8H4"/></svg>Copy';},2200);
+    toast('Đã copy vào clipboard!');
+  });
+}
+
+// ══ LAYOUT ══
+function setLayout(m){
+  const l=document.getElementById('lp'),r=document.getElementById('rp'),res=document.getElementById('resizer');
+  ['split','code','prev'].forEach(id=>document.getElementById('pill-'+id).classList.remove('on'));
+  document.getElementById('pill-'+m).classList.add('on');
+  if(m==='split'){
+    l.style.display='';r.style.display='';res.style.display='';
+    l.style.width='50%';l.style.flex='none';r.style.flex='1';
+  }else if(m==='code'){
+    l.style.display='';r.style.display='none';res.style.display='none';
+    l.style.width='100%';l.style.flex='1';
+  }else{
+    l.style.display='none';r.style.display='';res.style.display='none';
+    r.style.flex='1';
+  }
+}
+
+// ══ TOAST ══
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');
+  clearTimeout(window._tt);window._tt=setTimeout(()=>t.classList.remove('show'),1900);
+}
+
+// ══ BOOT ══
+// Initialize undo stack with empty state
+undoStack=[''];
+initFrame();
+</script>
+</body>
+</html>
