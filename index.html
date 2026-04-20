@@ -1103,64 +1103,122 @@ frame.addEventListener('load',()=>{
   });
 });
 
-// ══ FIX #1: HOVER → SYNC CODE (improved) ══
+// ══ FIX #1: HOVER → SYNC CODE (IMPROVED V2) ══
 function scrollCodeToElement(el){
   if(!el||!el.tagName)return;
   const tag=el.tagName.toLowerCase();
-  if(tag==='body'||tag==='html')return;
+  if(tag==='body'||tag==='html'||tag==='head'||tag==='br'||tag==='hr')return;
 
   const code=textarea.value;
   const lines=code.split('\n');
-
-  // Strategy 1: match by tag + text content
-  const inner=(el.textContent||'').trim().slice(0,20).replace(/\s+/g,' ');
-  const id=el.id?`id="${el.id}"`:'';
-  const cls=el.className&&typeof el.className==='string'?el.className.trim().split(/\s+/)[0]:'';
-
   let best=-1;
 
-  // Try id match first
-  if(id){
+  // ── Strategy 1: ID match (most reliable) ──
+  if(el.id){
+    const idPattern=`id="${el.id}"`;
     for(let i=0;i<lines.length;i++){
-      if(lines[i].includes('<'+tag)&&lines[i].includes(id)){best=i;break;}
+      if(lines[i].includes(idPattern)&&lines[i].includes('<'+tag)){
+        best=i;
+        break;
+      }
+    }
+    if(best!==-1){
+      scrollToLine(best);
+      return;
     }
   }
-  // Try class match
-  if(best===-1&&cls){
-    for(let i=0;i<lines.length;i++){
-      if(lines[i].includes('<'+tag)&&lines[i].includes(cls)){best=i;break;}
-    }
-  }
-  // Try text content match
-  if(best===-1&&inner.length>2){
-    const short=inner.slice(0,10);
-    for(let i=0;i<lines.length;i++){
-      if(lines[i].includes('<'+tag)&&(lines[i].includes(short)||true)){
-        // Check nearby lines for content
-        const nearby=lines.slice(i,i+3).join('\n');
-        if(nearby.includes(short)){best=i;break;}
+
+  // ── Strategy 2: Class match (reliable) ──
+  if(el.className&&typeof el.className==='string'){
+    const classes=el.className.trim().split(/\s+/);
+    const primaryClass=classes[0];
+    if(primaryClass){
+      const classPattern=`class="[^"]*${primaryClass}`;
+      for(let i=0;i<lines.length;i++){
+        if(new RegExp(classPattern).test(lines[i])&&lines[i].includes('<'+tag)){
+          best=i;
+          break;
+        }
+      }
+      if(best!==-1){
+        scrollToLine(best);
+        return;
       }
     }
   }
-  // Fallback: first tag occurrence
-  if(best===-1){
-    for(let i=0;i<lines.length;i++){
-      if(lines[i].includes('<'+tag)){best=i;break;}
+
+  // ── Strategy 3: Data attributes ──
+  if(el.hasAttributes()){
+    for(let attr of el.attributes){
+      if(attr.name.startsWith('data-')){
+        const pattern=`${attr.name}="${attr.value}"`;
+        for(let i=0;i<lines.length;i++){
+          if(lines[i].includes(pattern)&&lines[i].includes('<'+tag)){
+            best=i;
+            break;
+          }
+        }
+        if(best!==-1){
+          scrollToLine(best);
+          return;
+        }
+      }
     }
   }
 
-  if(best===-1)return;
+  // ── Strategy 4: Unique text content (for leaf elements) ──
+  if(el.children.length===0){
+    const text=(el.textContent||'').trim();
+    if(text.length>3&&text.length<100){
+      const shortText=text.slice(0,20).replace(/\s+/g,'\\s+');
+      const regex=new RegExp(`<${tag}[^>]*>[^<]*${shortText}`);
+      for(let i=0;i<lines.length;i++){
+        if(regex.test(lines[i])){
+          best=i;
+          break;
+        }
+      }
+      if(best!==-1){
+        scrollToLine(best);
+        return;
+      }
+    }
+  }
 
-  const lineH=21.875;
-  const targetTop=Math.max(0,(best-2)*lineH);
-  textarea.scrollTo({top:targetTop,behavior:'smooth'});
+  // ── Strategy 5: Fallback - first matching tag ──
+  for(let i=0;i<lines.length;i++){
+    if(lines[i].includes('<'+tag)&&!lines[i].includes('</'+tag)){
+      best=i;
+      break;
+    }
+  }
+
+  if(best!==-1){
+    scrollToLine(best);
+  }
+}
+
+function scrollToLine(lineNum){
+  const lineH=21.875; // line-height in pixels
+  const targetTop=Math.max(0,(lineNum-2)*lineH);
+  
+  textarea.scrollTo({
+    top:targetTop,
+    behavior:'smooth'
+  });
   hlPre.scrollTop=targetTop;
 
-  // Visual flash
+  // Visual highlight effect
   clearTimeout(window._hlt);
-  textarea.style.outline='2px solid rgba(10,132,255,0.4)';
+  textarea.style.outline='2px solid rgba(10,132,255,0.5)';
   textarea.style.outlineOffset='-2px';
-  window._hlt=setTimeout(()=>{textarea.style.outline='';textarea.style.outlineOffset='';},600);
+  textarea.style.borderRadius='var(--radius-sm)';
+  
+  window._hlt=setTimeout(()=>{
+    textarea.style.outline='';
+    textarea.style.outlineOffset='';
+    textarea.style.borderRadius='';
+  }, 800);
 }
 
 // ══ DRAG RESIZE — overlay approach ══
