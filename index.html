@@ -1180,18 +1180,22 @@ function insertLink() {
     setTimeout(()=>document.getElementById('m-url').style.borderColor='',1500);
     return;
   }
-  closeLinkModal(); if (!fd) initFrame(); pushUndo();
-  if (editingAnchor) {
-    // — Sửa link đã có: chỉ update attributes, không đụng vị trí cursor —
-    editingAnchor.setAttribute('href', url);
-    if (title) editingAnchor.setAttribute('title', title); else editingAnchor.removeAttribute('title');
-    if (blank) editingAnchor.setAttribute('target', '_blank'); else editingAnchor.removeAttribute('target');
+  // IMPORTANT: save editingAnchor BEFORE closeLinkModal() nullifies it
+  const targetAnchor = editingAnchor;
+  closeLinkModal();
+  if (!fd) initFrame();
+  pushUndo();
+
+  if (targetAnchor) {
+    // ── CHẾ ĐỘ SỬA: update attributes trực tiếp trên node ──
+    targetAnchor.setAttribute('href', url);
+    if (title) targetAnchor.setAttribute('title', title); else targetAnchor.removeAttribute('title');
+    if (blank) targetAnchor.setAttribute('target', '_blank'); else targetAnchor.removeAttribute('target');
     const d = text || url;
-    editingAnchor.innerHTML = strong ? `<strong>${d}</strong>` : d;
-    editingAnchor = null;
+    targetAnchor.innerHTML = strong ? `<strong>${d}</strong>` : d;
     toast('Đã cập nhật liên kết ✓');
   } else {
-    // — Chèn link mới: khôi phục vùng chọn đã lưu, rồi mới thao tác —
+    // ── CHẾ ĐỘ CHÈN MỚI: khôi phục vùng chọn đã lưu ──
     restSel();
     const inner = strong ? `<strong>${text||url}</strong>` : (text||url);
     const titleAttr = title ? ` title="${title.replace(/"/g,'&quot;')}"` : '';
@@ -1204,7 +1208,7 @@ function insertLink() {
       if (n.nodeType === 3) n = n.parentNode;
       const existA = n.closest ? n.closest('a') : null;
       if (existA) {
-        // Đang đứng trong link cũ → thay thế hẳn node đó
+        // Đang đứng trong link cũ → thay thế node đó
         existA.setAttribute('href', url);
         if (title) existA.setAttribute('title', title); else existA.removeAttribute('title');
         if (blank) existA.setAttribute('target', '_blank'); else existA.removeAttribute('target');
@@ -1222,7 +1226,6 @@ function insertLink() {
         sel.addRange(r);
       }
     } else {
-      // Không có selection: chèn tại vị trí caret cuối body — dùng execCommand
       frame.contentWindow.focus();
       fd.execCommand('insertHTML', false, lh);
     }
@@ -1461,20 +1464,24 @@ function insertImage() {
     setTimeout(() => document.getElementById('im-src').style.borderColor = '', 1500);
     return;
   }
+  // IMPORTANT: save editingImg BEFORE closeImageModal() nullifies it
+  const targetNode = editingImg;
   closeImageModal();
   if (!fd) initFrame();
   pushUndo();
-  if (editingImg) {
-    // Thay thế node hình cũ
+
+  if (targetNode) {
+    // ── CHẾ ĐỘ SỬA: thay thế node cũ trực tiếp ──
     const tmp = fd.createElement('span');
     tmp.innerHTML = markup;
     const newNode = tmp.firstChild;
-    editingImg.parentNode.replaceChild(newNode, editingImg);
-    editingImg = null;
+    if (targetNode.parentNode) {
+      targetNode.parentNode.replaceChild(newNode, targetNode);
+    }
     toast('Đã cập nhật hình ảnh ✓');
   } else {
+    // ── CHẾ ĐỘ CHÈN MỚI: khôi phục vùng chọn đã lưu ──
     restSel();
-    // Chèn mới tại vị trí cursor
     const sel = frame.contentWindow.getSelection();
     if (sel && sel.rangeCount) {
       const r = sel.getRangeAt(0);
