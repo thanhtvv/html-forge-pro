@@ -843,8 +843,25 @@ function initFrame() {
       });
     });
 
+// Thêm biến theo dõi trạng thái chuột
+    let isDraggingInPreview = false;
+    
+    fd.body.addEventListener('mousedown', () => {
+      isDraggingInPreview = true;
+    });
+    
+    fd.body.addEventListener('mouseup', () => {
+      isDraggingInPreview = false;
+      // Cập nhật vùng chọn ngay khi nhả chuột
+      onPreviewSelectionChange(); 
+    });
+
     fd.addEventListener('selectionchange', () => {
       updateToolbarState();
+      
+      // Nếu đang giữ chuột để quét, KHÔNG sync xuống code vội để tránh đơ
+      if (isDraggingInPreview) return;
+      
       clearTimeout(window._selTimer);
       window._selTimer = setTimeout(onPreviewSelectionChange, 80);
     });
