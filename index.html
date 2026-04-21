@@ -122,9 +122,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 #html-input::placeholder{color:var(--text3);font-style:italic}
 #lp #editor-wrap::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,.08);backdrop-filter:blur(2px);pointer-events:none}
 [data-theme="dark"] #lp #editor-wrap::before{background:rgba(15,20,40,.15)}
-/* Selection highlight overlay in textarea */
-#sel-overlay{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
-.sel-mark{position:absolute;background:rgba(10,132,255,.22);border-radius:2px;pointer-events:none}
+/* textarea native selection colour (shown when focused) */
+#html-input::selection{background:rgba(10,132,255,.35);color:transparent}
 #preview-frame{flex:1;width:100%;border:none;background:transparent}
 /* OUTPUT BAR */
 #obar{display:flex;align-items:center;gap:8px;padding:8px 14px;background:var(--glass);backdrop-filter:var(--blur-md);border-top:1px solid var(--glass-border2);box-shadow:0 -1px 0 rgba(255,255,255,.35) inset;flex-shrink:0}
@@ -268,7 +267,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     </div>
     <div id="editor-wrap">
       <pre id="hl-pre"></pre>
-      <div id="sel-overlay"></div>
       <textarea id="html-input" spellcheck="false" autocomplete="off"
         placeholder="<!-- Dán HTML vào đây · Gõ < để xem autocomplete tag -->"></textarea>
     </div>
@@ -346,7 +344,7 @@ const frame     = document.getElementById('preview-frame');
 const odisplay  = document.getElementById('odisplay');
 const hlPre     = document.getElementById('hl-pre');
 const acDrop    = document.getElementById('ac-drop');
-const selOverlay = document.getElementById('sel-overlay');
+
 
 let fd = null;
 let lastMin = '';
@@ -475,136 +473,63 @@ function updateHL() {
 textarea.addEventListener('scroll', () => {
   hlPre.scrollTop  = textarea.scrollTop;
   hlPre.scrollLeft = textarea.scrollLeft;
-  // re-draw selection marks on scroll
-  clearTimeout(window._selScrollTimer);
-  window._selScrollTimer = setTimeout(redrawSelectionMarks, 30);
 });
 
 // ─────────────────────────────────────────────
-// SELECTION HIGHLIGHT IN TEXTAREA
-// When user selects text in the preview iframe,
-// we find the matching HTML in the textarea and
-// draw blue highlight boxes over it (read-only overlay).
-// NO hover sync — only selection-based.
+// PREVIEW SELECTION → HIGHLIGHT IN TEXTAREA
+//
+// Key insight: NEVER try to draw pixel boxes manually.
+// Use textarea.setSelectionRange() — the browser renders
+// the selection highlight perfectly, handling word-wrap,
+// fonts, and all edge cases automatically.
 // ─────────────────────────────────────────────
 
+const LH = 21.875; // line-height px (12.5 * 1.75) — used for scroll only
+
+// Clear: move caret to end so nothing appears selected
 function clearSelectionMarks() {
-  selOverlay.innerHTML = '';
+  // Only clear if we were the ones who set it (guard via flag)
+  if (!_weSetSelection) return;
+  _weSetSelection = false;
+  // Don't blur; just collapse to end silently
+  const pos = textarea.selectionEnd;
+  textarea.setSelectionRange(pos, pos);
 }
 
-// Convert a pixel char-width estimate to actual char count
-const LH = 21.875; // line-height px (12.5 * 1.75)
-const PT = 14;     // textarea padding-top
-const PL = 16;     // textarea padding-left
-const CH = 7.55;   // approx char width for DM Mono 12.5px
-
-function redrawSelectionMarks() {
-  clearSelectionMarks();
-  if (!_previewSelRange) return;
-  const { startIdx, endIdx } = _previewSelRange;
-  if (startIdx < 0 || endIdx <= startIdx) return;
-
-  const code  = textarea.value;
-  const lines = code.split('\n');
-
-  // Convert absolute char index → { line, col }
-  function idxToLineCol(idx) {
-    let rem = idx;
-    for (let i = 0; i < lines.length; i++) {
-      const len = lines[i].length + 1; // +1 for \n
-      if (rem < len) return { line: i, col: rem };
-      rem -= len;
-    }
-    const last = lines.length - 1;
-    return { line: last, col: lines[last].length };
-  }
-
-  const start = idxToLineCol(startIdx);
-  const end   = idxToLineCol(endIdx);
-
-  // Draw per-line highlight boxes
-  const wrap      = document.getElementById('editor-wrap');
-  const wrapW     = wrap.clientWidth - PL * 2;
-  const scrollTop = textarea.scrollTop;
-
-  for (let L = start.line; L <= end.line; L++) {
-    const lineText = lines[L];
-    const colFrom  = L === start.line ? start.col : 0;
-    const colTo    = L === end.line   ? end.col   : lineText.length;
-    if (colFrom >= colTo) continue;
-
-    const topPx  = PT + L * LH - scrollTop;
-    // Only draw if visible
-    if (topPx + LH < 0 || topPx > wrap.clientHeight) continue;
-
-    const leftPx  = PL + colFrom * CH;
-    const widthPx = Math.min((colTo - colFrom) * CH, wrapW - colFrom * CH + PL);
-
-    const mark = document.createElement('div');
-    mark.className = 'sel-mark';
-    mark.style.top    = topPx + 'px';
-    mark.style.left   = leftPx + 'px';
-    mark.style.width  = Math.max(4, widthPx) + 'px';
-    mark.style.height = LH + 'px';
-    selOverlay.appendChild(mark);
-  }
-}
-
-// State: current selected range in textarea char indices
-let _previewSelRange = null;
+let _weSetSelection = false; // true while we hold the textarea selection
 
 // Called when selection changes in iframe
 function onPreviewSelectionChange() {
   if (_syncLocked) return;
   const sel = fd && fd.getSelection ? fd.getSelection() : null;
   if (!sel || !sel.rangeCount || sel.isCollapsed) {
-    _previewSelRange = null;
     clearSelectionMarks();
     return;
   }
 
-  // Get selected text from preview
   const selectedText = sel.toString();
-  if (!selectedText || selectedText.length < 1) {
-    _previewSelRange = null;
+  if (!selectedText || !selectedText.trim()) {
     clearSelectionMarks();
     return;
   }
 
-  // Find the selected text in the HTML source.
-  // We use the outerHTML of the common ancestor to locate it precisely.
-  const range = sel.getRangeAt(0);
-  let anchor = range.commonAncestorContainer;
-  if (anchor.nodeType === 3) anchor = anchor.parentNode;
-
-  // Strategy: serialize the anchor element's outerHTML,
-  // find it in the textarea source, then narrow down to the text.
-  const code = textarea.value;
-
-  // Try to find the innerText of selection inside the full source
-  // by searching for a chunk of the selected text (stripped of whitespace noise)
   const needle = selectedText.replace(/\s+/g, ' ').trim();
-  if (!needle) { clearSelectionMarks(); return; }
+  const code   = textarea.value;
 
-  // Search the raw HTML for the needle text (ignoring tags)
-  // Build a regex that matches needle across possible tag boundaries
-  let searchIdx = findTextInHTML(code, needle);
-  if (searchIdx.start < 0) {
-    _previewSelRange = null;
-    clearSelectionMarks();
-    return;
-  }
+  const found = findTextInHTML(code, needle);
+  if (found.start < 0) { clearSelectionMarks(); return; }
 
-  _previewSelRange = { startIdx: searchIdx.start, endIdx: searchIdx.end };
+  // ── Highlight via native textarea selection ──
+  _weSetSelection = true;
+  textarea.focus({ preventScroll: true });
+  textarea.setSelectionRange(found.start, found.end);
 
-  // Scroll textarea to show the selection
-  const startLine = code.slice(0, searchIdx.start).split('\n').length - 1;
+  // Scroll so the selection start is visible (1/3 from top)
+  const startLine    = code.slice(0, found.start).split('\n').length - 1;
   const visibleLines = Math.floor(textarea.clientHeight / LH);
   const targetScroll = Math.max(0, (startLine - Math.floor(visibleLines / 3)) * LH);
   textarea.scrollTop = targetScroll;
   hlPre.scrollTop    = targetScroll;
-
-  redrawSelectionMarks();
 }
 
 // Find needle (plain text, stripped) inside HTML source (with tags).
