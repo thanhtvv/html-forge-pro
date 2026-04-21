@@ -595,56 +595,101 @@ function onPreviewSelectionChange() {
 function findTextInHTML(html, needle) {
   const FAIL = { start: -1, end: -1 };
   if (!needle) return FAIL;
+
   const map = [];
+  const mapLen = [];
   let plain = '';
   let i = 0;
+  let lastWasSpace = false;
+
   while (i < html.length) {
     if (html[i] === '<') {
+      // Bỏ qua toàn bộ thẻ HTML không cho vào chuỗi text, nhưng giữ đúng index
       const end = html.indexOf('>', i);
-      if (end === -1) { i++; continue; }
+      if (end === -1) {
+        map.push(i); mapLen.push(1);
+        plain += html[i];
+        lastWasSpace = false;
+        i++;
+        continue;
+      }
       i = end + 1;
     } else if (html[i] === '&') {
+      // Xử lý các ký tự đặc biệt (HTML Entities)
       const semi = html.indexOf(';', i);
       if (semi !== -1 && semi - i <= 8) {
         const ent = html.slice(i, semi + 1);
-        let ch = '';
+        let ch = ent;
         if (ent === '&amp;') ch = '&';
         else if (ent === '&lt;') ch = '<';
         else if (ent === '&gt;') ch = '>';
         else if (ent === '&nbsp;') ch = ' ';
         else if (ent === '&quot;') ch = '"';
-        else ch = ent;
-        map.push(i);
-        plain += ch;
+
+        let isSpace = (ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r');
+        if (isSpace) {
+          if (!lastWasSpace) {
+            map.push(i); mapLen.push(semi + 1 - i);
+            plain += ' ';
+            lastWasSpace = true;
+          }
+        } else {
+          map.push(i); mapLen.push(semi + 1 - i);
+          plain += ch;
+          lastWasSpace = false;
+        }
         i = semi + 1;
       } else {
-        map.push(i);
-        plain += html[i];
+        let ch = html[i];
+        let isSpace = (ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r');
+        if (isSpace) {
+          if (!lastWasSpace) {
+            map.push(i); mapLen.push(1); plain += ' '; lastWasSpace = true;
+          }
+        } else {
+          map.push(i); mapLen.push(1); plain += ch; lastWasSpace = false;
+        }
         i++;
       }
     } else {
-      map.push(i);
-      plain += html[i];
+      let ch = html[i];
+      let isSpace = (ch === ' ' || ch === '\n' || ch === '\t' || ch === '\r');
+      if (isSpace) {
+        // Gộp các khoảng trắng/xuống dòng liền kề thành 1 space duy nhất
+        if (!lastWasSpace) {
+          map.push(i); mapLen.push(1); plain += ' '; lastWasSpace = true;
+        }
+      } else {
+        map.push(i); mapLen.push(1); plain += ch; lastWasSpace = false;
+      }
       i++;
     }
   }
-  const plainNorm = plain.replace(/\s+/g, ' ');
-  const needleNorm = needle.replace(/\s+/g, ' ');
-  const pi = plainNorm.indexOf(needleNorm);
+
+  // Chuẩn hóa text người dùng quét
+  const needleNorm = needle.replace(/\s+/g, ' ').trim();
+  if (!needleNorm) return FAIL;
+
+  let pi = plain.indexOf(needleNorm);
+
+  // Nếu không tìm thấy khớp 100%, fallback tìm một đoạn ngắn đầu tiên
   if (pi < 0) {
-    const short = needleNorm.slice(0, Math.min(40, needleNorm.length));
-    const pi2 = plainNorm.indexOf(short);
-    if (pi2 < 0) return FAIL;
-    const htmlStart = map[pi2] !== undefined ? map[pi2] : -1;
-    if (htmlStart < 0) return FAIL;
-    const endPlain = pi2 + short.length - 1;
-    const htmlEnd  = map[endPlain] !== undefined ? map[endPlain] + 1 : htmlStart + short.length;
+    const short = needleNorm.slice(0, Math.min(30, needleNorm.length));
+    pi = plain.indexOf(short);
+    if (pi < 0) return FAIL;
+    
+    const endPlain = pi + short.length - 1;
+    const htmlStart = map[pi];
+    const htmlEnd = map[endPlain] + mapLen[endPlain]; // Lấy đúng chiều dài tại vị trí chốt
     return { start: htmlStart, end: htmlEnd };
   }
-  const htmlStart = map[pi] !== undefined ? map[pi] : -1;
-  if (htmlStart < 0) return FAIL;
+
   const endPlain = pi + needleNorm.length - 1;
-  const htmlEnd  = map[endPlain] !== undefined ? map[endPlain] + 1 : htmlStart + needleNorm.length;
+  const htmlStart = map[pi];
+  
+  // Vị trí kết thúc = Index của ký tự cuối + độ dài của ký tự đó (1 hoặc độ dài entity)
+  const htmlEnd = map[endPlain] + mapLen[endPlain];
+
   return { start: htmlStart, end: htmlEnd };
 }
 
