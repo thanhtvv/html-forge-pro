@@ -288,9 +288,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 
 <div id="obar">
   <span id="olbl">Output</span>
-  <div id="odisplay">— nhấn Minify để tạo HTML nén —</div>
-  <button class="obtn" onclick="generateOutput()">
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,4 6,8 10,4"/><line x1="6" y1="8" x2="6" y2="1"/><line x1="1" y1="11" x2="11" y2="11"/></svg>Minify
+  <div id="odisplay">— Paste hoặc nhấn Format để tự format theo chuẩn —</div>
+  <button class="obtn" onclick="formatEditorCode()">
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,4 6,8 10,4"/><line x1="6" y1="8" x2="6" y2="1"/><line x1="1" y1="11" x2="11" y2="11"/></svg>Format
   </button>
   <button class="obtn cp" id="copy-btn" onclick="copyOutput()">
     <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><path d="M8 4V2.5A1.5 1.5 0 006.5 1h-4A1.5 1.5 0 001 2.5v4A1.5 1.5 0 002.5 8H4"/></svg>Copy
@@ -382,10 +382,6 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   <div class="pop-title">🖼️ Hình ảnh</div>
   <input class="pop-url" id="ip-src" type="url" placeholder="URL hình..." style="margin-bottom:6px">
   <input class="pop-url" id="ip-alt" type="text" placeholder="Alt text..." style="margin-bottom:6px">
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
-    <input class="pop-url" id="ip-width" type="text" placeholder="Rộng (vd: 100%)">
-    <input class="pop-url" id="ip-height" type="text" placeholder="Cao (vd: auto)">
-  </div>
   <div class="pop-row">
     <button class="pop-btn ok" onclick="applyImgPopup()">Lưu</button>
     <button class="pop-btn" onclick="openImageModalFromPopup()">Chi tiết</button>
@@ -1500,8 +1496,6 @@ function openImgPopup(img, ev) {
   currentPopupImg = img;
   document.getElementById('ip-src').value    = img.getAttribute('src')   || '';
   document.getElementById('ip-alt').value    = img.getAttribute('alt')   || '';
-  document.getElementById('ip-width').value  = img.getAttribute('width') || img.style.width  || '';
-  document.getElementById('ip-height').value = img.getAttribute('height')|| img.style.height || '';
   const fr = frame.getBoundingClientRect();
   const px = Math.min(fr.left + (ev ? ev.clientX : fr.width / 2), window.innerWidth - 320);
   const py = Math.min(fr.top + (ev ? ev.clientY : fr.height / 2) + 20, window.innerHeight - 200);
@@ -1520,16 +1514,10 @@ function applyImgPopup() {
   if (!currentPopupImg) return;
   const src = document.getElementById('ip-src').value.trim();
   const alt = document.getElementById('ip-alt').value.trim();
-  const w   = document.getElementById('ip-width').value.trim();
-  const h   = document.getElementById('ip-height').value.trim();
   if (!src) return;
   pushUndo();
   currentPopupImg.setAttribute('src', src);
   currentPopupImg.setAttribute('alt', alt);
-  if (w) { currentPopupImg.setAttribute('width', w); currentPopupImg.style.width = ''; }
-  else   { currentPopupImg.removeAttribute('width'); }
-  if (h) { currentPopupImg.setAttribute('height', h); currentPopupImg.style.height = ''; }
-  else   { currentPopupImg.removeAttribute('height'); }
   withSyncLock(() => {
     sanitizeDOMAttrs(fd.body);
     const newVal = cleanHTML(fd.body.innerHTML);
@@ -1547,7 +1535,7 @@ function openImageModalFromPopup() {
   const sty = img.getAttribute('style') || '';
   closeImgPopup();
   openImageModal({
-    el:     img,
+    el:     fig || img,
     src:    img.getAttribute('src')   || '',
     alt:    img.getAttribute('alt')   || '',
     title:  img.getAttribute('title') || '',
@@ -1573,7 +1561,7 @@ function removeImgPopup() {
   closeImgPopup();
 }
 
-['ip-src','ip-alt','ip-width','ip-height'].forEach(id => {
+['ip-src','ip-alt'].forEach(id => {
   const el = document.getElementById(id);
   if (el) el.addEventListener('keydown', e => {
     if (e.key === 'Enter') applyImgPopup();
@@ -1587,19 +1575,63 @@ document.addEventListener('click', e => {
 });
 
 // ─────────────────────────────────────────────
-// MINIFY / COPY
+// FORMAT HTML / COPY
 // ─────────────────────────────────────────────
-function generateOutput() {
-  const src=textarea.value||(fd?fd.body.innerHTML:'');
-  lastMin=src.replace(/<!--[\s\S]*?-->/g,'').replace(/[ \t\r\n]+/g,' ')
-    .replace(/>\s+</g,'><').replace(/\s+>/g,'>').replace(/<\s+/g,'<').trim();
-  odisplay.textContent=lastMin||'(trống)'; odisplay.title=lastMin;
-  odisplay.classList.toggle('has',!!lastMin);
-  toast('Đã minify HTML ('+lastMin.length+' ký tự)');
+function formatHTMLCode(html) {
+  let indent = 0;
+  const tc = '  ';
+  let formatted = '';
+  const tokens = html.replace(/>\s+</g, '><').split(/(<\/?[^>]+>)/g).filter(x => x.trim().length > 0);
+  tokens.forEach(token => {
+    if (token.match(/^<\/[^>]+>/)) {
+      indent = Math.max(0, indent - 1);
+      formatted += '\n' + tc.repeat(indent) + token;
+    } else if (token.match(/^<[^>]+>$/)) {
+      if (formatted.length > 0) formatted += '\n' + tc.repeat(indent);
+      formatted += token;
+      if (!token.match(/^(<img|<input|<br|<hr|<meta|<link|<area|<base|<col|<embed|<source|<track|<wbr)/i) && !token.match(/\/>$/) && !token.match(/^<!/)) {
+        indent++;
+      }
+    } else {
+      formatted += '\n' + tc.repeat(indent) + token.trim();
+    }
+  });
+  return formatted.trim().replace(/\n\s*\n/g, '\n');
 }
+
+function formatEditorCode() {
+  const src = textarea.value || (fd ? fd.body.innerHTML : '');
+  const fmt = formatHTMLCode(src);
+  withSyncLock(() => {
+    pushUndo(fmt);
+    textarea.value = fmt;
+    updateHL();
+    if (fd && fd.body) fd.body.innerHTML = fmt;
+  });
+  odisplay.textContent = 'Đã format HTML (' + fmt.length + ' ký tự)';
+  toast('Đã format HTML theo chuẩn ✓');
+}
+
+textarea.addEventListener('paste', () => {
+  setTimeout(() => {
+    const original = textarea.value;
+    const fmt = formatHTMLCode(original);
+    if(fmt !== original) {
+      withSyncLock(() => {
+        pushUndo(fmt);
+        textarea.value = fmt;
+        updateHL();
+        if (fd && fd.body) fd.body.innerHTML = fmt;
+      });
+      toast('Tự động Format HTML pasted ✓');
+    }
+  }, 30);
+});
 function copyOutput() {
-  if (!lastMin) generateOutput(); if (!lastMin) return;
-  navigator.clipboard.writeText(lastMin).then(()=>{
+  formatEditorCode();
+  const textToCopy = textarea.value;
+  if (!textToCopy) return;
+  navigator.clipboard.writeText(textToCopy).then(()=>{
     const btn=document.getElementById('copy-btn');
     btn.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="2,6 5,9 10,3"/></svg> Đã copy!';
     setTimeout(()=>{ btn.innerHTML='<svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><path d="M8 4V2.5A1.5 1.5 0 006.5 1h-4A1.5 1.5 0 001 2.5v4A1.5 1.5 0 002.5 8H4"/></svg>Copy'; },2200);
