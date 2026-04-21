@@ -1480,16 +1480,16 @@ function insertImage() {
     setTimeout(() => document.getElementById('im-src').style.borderColor = '', 1500);
     return;
   }
+  const targetImg = editingImg; // lưu trước khi closeImageModal() xóa
   closeImageModal();
   if (!fd) initFrame();
   pushUndo();
-  if (editingImg) {
+  if (targetImg) {
     // Thay thế node hình cũ
     const tmp = fd.createElement('span');
     tmp.innerHTML = markup;
     const newNode = tmp.firstChild;
-    editingImg.parentNode.replaceChild(newNode, editingImg);
-    editingImg = null;
+    targetImg.parentNode.replaceChild(newNode, targetImg);
     toast('Đã cập nhật hình ảnh ✓');
   } else {
     restSel();
