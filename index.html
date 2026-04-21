@@ -321,6 +321,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 
 <div id="link-popup">
   <div class="pop-title">✏️ Chỉnh sửa nhanh link</div>
+  <input class="pop-url" id="pop-text" type="text" placeholder="Văn bản hiển thị" style="margin-bottom:6px">
   <input class="pop-url" id="pop-url" type="url" placeholder="https://example.com">
   <div class="pop-row">
     <button class="pop-btn ok" onclick="applyLinkPopup()">Lưu</button>
@@ -1115,66 +1116,97 @@ document.getElementById('link-modal').addEventListener('keydown',function(e){
 // LINK QUICK POPUP
 // ─────────────────────────────────────────────
 let currentPopupAnchor = null;
+
 function openLinkPopup(anchor, ev) {
-  currentPopupAnchor=anchor;
-  const pp=document.getElementById('link-popup');
-  document.getElementById('pop-url').value=anchor.getAttribute('href')||'';
-  const fr=frame.getBoundingClientRect();
-  const px=Math.min(fr.left+(ev?ev.clientX:fr.width/2), window.innerWidth-390);
-  const py=Math.min(fr.top+(ev?ev.clientY:fr.height/2)+20, window.innerHeight-170);
-  pp.style.left=px+'px'; pp.style.top=py+'px';
+  currentPopupAnchor = anchor;
+  const pp = document.getElementById('link-popup');
+  
+  document.getElementById('pop-url').value = anchor.getAttribute('href') || '';
+  document.getElementById('pop-text').value = anchor.textContent.trim();
+  
+  const fr = frame.getBoundingClientRect();
+  const px = Math.min(fr.left + (ev ? ev.clientX : fr.width / 2), window.innerWidth - 390);
+  const py = Math.min(fr.top + (ev ? ev.clientY : fr.height / 2) + 20, window.innerHeight - 170);
+  
+  pp.style.left = px + 'px'; 
+  pp.style.top = py + 'px';
   pp.classList.add('show');
-  setTimeout(()=>document.getElementById('pop-url').focus(),50);
 }
+
 function closeLinkPopup() {
   document.getElementById('link-popup').classList.remove('show');
-  currentPopupAnchor=null;
+  currentPopupAnchor = null;
 }
+
 function applyLinkPopup() {
   if (!currentPopupAnchor) return;
-  const url=document.getElementById('pop-url').value.trim(); if (!url) return;
-  pushUndo(); currentPopupAnchor.setAttribute('href',url);
-  withSyncLock(()=>{
+  const url = document.getElementById('pop-url').value.trim(); 
+  const text = document.getElementById('pop-text').value.trim();
+  
+  if (!url) return;
+  
+  pushUndo(); 
+  currentPopupAnchor.setAttribute('href', url);
+  
+  if (text) {
+    const hasStrong = !!currentPopupAnchor.querySelector('strong');
+    currentPopupAnchor.innerHTML = hasStrong ? `<strong>${text}</strong>` : text;
+  }
+
+  withSyncLock(() => {
     sanitizeDOMAttrs(fd.body);
-    const newVal=cleanHTML(fd.body.innerHTML);
-    pushUndo(newVal); textarea.value=newVal; updateHL();
+    const newVal = cleanHTML(fd.body.innerHTML);
+    pushUndo(newVal); 
+    textarea.value = newVal; 
+    updateHL();
   });
-  toast('Đã cập nhật link ✓'); closeLinkPopup();
+  
+  toast('Đã cập nhật link ✓'); 
+  closeLinkPopup();
 }
+
 function removeLinkPopup() {
   if (!currentPopupAnchor) return;
   pushUndo();
-  const anchor=currentPopupAnchor, p=anchor.parentNode;
-  while(anchor.firstChild) p.insertBefore(anchor.firstChild,anchor);
+  const anchor = currentPopupAnchor, p = anchor.parentNode;
+  while(anchor.firstChild) p.insertBefore(anchor.firstChild, anchor);
   p.removeChild(anchor);
-  withSyncLock(()=>{
+  withSyncLock(() => {
     sanitizeDOMAttrs(fd.body);
-    const newVal=cleanHTML(fd.body.innerHTML);
-    pushUndo(newVal); textarea.value=newVal; updateHL();
+    const newVal = cleanHTML(fd.body.innerHTML);
+    pushUndo(newVal); textarea.value = newVal; updateHL();
   });
   toast('Đã xóa liên kết'); closeLinkPopup();
 }
+
 function openLinkModalFromPopup() {
   if (!currentPopupAnchor) return;
-  const anchor=currentPopupAnchor; editingAnchor=anchor; closeLinkPopup();
-  document.getElementById('m-url').value=anchor.getAttribute('href')||'';
-  document.getElementById('m-text').value=anchor.textContent.trim();
-  document.getElementById('m-title').value=anchor.getAttribute('title')||'';
-  document.getElementById('m-blank').checked=anchor.getAttribute('target')==='_blank';
-  document.getElementById('m-strong').checked=!!anchor.querySelector('strong');
+  const anchor = currentPopupAnchor; editingAnchor = anchor; closeLinkPopup();
+  document.getElementById('m-url').value = anchor.getAttribute('href') || '';
+  document.getElementById('m-text').value = anchor.textContent.trim();
+  document.getElementById('m-title').value = anchor.getAttribute('title') || '';
+  document.getElementById('m-blank').checked = anchor.getAttribute('target') === '_blank';
+  document.getElementById('m-strong').checked = !!anchor.querySelector('strong');
   updLP();
-  document.getElementById('modal-title-text').textContent='Chỉnh sửa liên kết';
-  document.querySelector('#link-modal .mbtn.ok').textContent='Lưu thay đổi';
+  document.getElementById('modal-title-text').textContent = 'Chỉnh sửa liên kết';
+  document.querySelector('#link-modal .mbtn.ok').textContent = 'Lưu thay đổi';
   document.getElementById('link-modal').classList.add('show');
-  setTimeout(()=>document.getElementById('m-url').focus(),60);
+  setTimeout(() => document.getElementById('m-url').focus(), 60);
 }
-document.addEventListener('click',e=>{
-  const pp=document.getElementById('link-popup');
-  if(pp.classList.contains('show')&&!pp.contains(e.target)&&e.target!==frame)closeLinkPopup();
+
+document.addEventListener('click', e => {
+  const pp = document.getElementById('link-popup');
+  if(pp.classList.contains('show') && !pp.contains(e.target) && e.target !== frame) closeLinkPopup();
 });
-document.getElementById('pop-url').addEventListener('keydown',e=>{
-  if(e.key==='Enter')applyLinkPopup();
-  if(e.key==='Escape')closeLinkPopup();
+
+['pop-url', 'pop-text'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) {
+    el.addEventListener('keydown', e => {
+      if (e.key === 'Enter') applyLinkPopup();
+      if (e.key === 'Escape') closeLinkPopup();
+    });
+  }
 });
 
 // ─────────────────────────────────────────────
