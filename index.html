@@ -1596,41 +1596,124 @@ document.addEventListener('click', e => {
 });
 
 // ─────────────────────────────────────────────
-// CLEAN ON PASTE / COPY
+// DEEP HTML NORMALIZER — paste from any source
 // ─────────────────────────────────────────────
-function cleanEditorCode(html) {
-  return html.replace(/[ \t\r\n]+/g,' ')
-    .replace(/>\s+</g,'><').replace(/\s+>/g,'>').replace(/<\s+/g,'<').trim();
+// Semantic tags to KEEP (all others are unwrapped — content kept, tag removed)
+const KEEP_TAGS = new Set([
+  'p','h1','h2','h3','h4','h5','h6',
+  'a','strong','em','b','i','u','s','del','ins','mark','small','sup','sub',
+  'ul','ol','li','dl','dt','dd',
+  'table','thead','tbody','tfoot','tr','th','td','caption','colgroup','col',
+  'img','figure','figcaption','picture','source',
+  'blockquote','pre','code','br','hr',
+  'div','span','section','article','header','footer','nav','aside','main',
+  'video','audio','iframe',
+]);
+
+// Per-tag allowed attributes (anything else is stripped)
+const TAG_ATTRS = {
+  'a':        ['href','title','target','rel'],
+  'img':      ['src','alt','title','loading','width','height','srcset','sizes'],
+  'source':   ['src','srcset','type','media'],
+  'video':    ['src','controls','autoplay','loop','muted','preload','poster','width','height'],
+  'audio':    ['src','controls','autoplay','loop','muted','preload'],
+  'iframe':   ['src','width','height','title','allowfullscreen','frameborder','allow'],
+  'td':       ['colspan','rowspan'],
+  'th':       ['colspan','rowspan'],
+  'col':      ['span'],
+  'colgroup': ['span'],
+  'ol':       ['start','reversed','type'],
+  'li':       ['value'],
+  'blockquote':['cite'],
+  'del':      ['datetime'],
+  'ins':      ['datetime'],
+};
+
+// Style properties to keep (text-align is the most important for content fidelity)
+const SAFE_STYLE_PROPS = ['text-align','vertical-align'];
+
+function filterStyle(styleStr) {
+  if (!styleStr) return '';
+  return (styleStr.split(';')
+    .map(s => s.trim())
+    .filter(s => {
+      const p = s.split(':')[0].trim().toLowerCase();
+      return SAFE_STYLE_PROPS.some(safe => p === safe);
+    })
+    .join(';'));
+}
+
+function processCleanNode(node) {
+  if (node.nodeType === 3) return; // text: keep
+  if (node.nodeType !== 1) { node.remove(); return; }
+
+  const tag = node.tagName.toLowerCase();
+
+  // Recurse children first (snapshot since DOM may change)
+  Array.from(node.childNodes).forEach(processCleanNode);
+
+  // Unknown / vendor tags (o:p, w:sdt, font, etc.) → unwrap (keep children)
+  if (!KEEP_TAGS.has(tag)) {
+    const parent = node.parentNode;
+    if (parent) {
+      while (node.firstChild) parent.insertBefore(node.firstChild, node);
+      node.remove();
+    }
+    return;
+  }
+
+  // Clean attributes: keep only what's in TAG_ATTRS + filtered style
+  const allowed = new Set(TAG_ATTRS[tag] || []);
+  const toRemove = [];
+  for (let i = 0; i < node.attributes.length; i++) {
+    const attr = node.attributes[i];
+    const aname = attr.name.toLowerCase();
+    if (allowed.has(aname)) continue;
+    if (aname === 'style') {
+      const safe = filterStyle(attr.value);
+      if (safe) { node.setAttribute('style', safe); continue; }
+    }
+    toRemove.push(attr.name);
+  }
+  toRemove.forEach(n => node.removeAttribute(n));
+
+  // Remove empty meaningless wrappers (span/div with no attrs and no visible content)
+  if ((tag === 'span' || tag === 'div') &&
+      node.attributes.length === 0 &&
+      !node.textContent.trim() &&
+      !node.querySelector('img,br,hr')) {
+    node.remove();
+  }
+}
+
+function deepCleanHTML(raw) {
+  // Parse as a full HTML doc then grab body content
+  const doc = (new DOMParser()).parseFromString(
+    '<!DOCTYPE html><html><body>' + raw + '</body></html>', 'text/html'
+  );
+  const body = doc.body;
+  Array.from(body.childNodes).forEach(processCleanNode);
+  // Minify: collapse whitespace, remove whitespace between tags
+  return body.innerHTML
+    .replace(/[ \t\r\n]+/g, ' ')
+    .replace(/>\s+</g, '><')
+    .replace(/\s+>/g, '>')
+    .replace(/<\s+/g, '<')
+    .trim();
 }
 
 textarea.addEventListener('paste', () => {
   setTimeout(() => {
     const original = textarea.value;
-    // First pass: DOM-level clean on iframe body
-    if (fd && fd.body) {
+    const cleaned = deepCleanHTML(original);
+    if (cleaned !== original) {
       withSyncLock(() => {
-        fd.body.innerHTML = original;
-        sanitizeDOMAttrs(fd.body);
-        const cleaned = cleanHTML(fd.body.innerHTML);
-        const minified = cleanEditorCode(cleaned);
-        if (minified !== original) {
-          pushUndo(minified);
-          textarea.value = minified;
-          updateHL();
-          fd.body.innerHTML = minified;
-          toast('Tự động dọn sạch HTML ✓');
-        }
-      });
-    } else {
-      // Fallback: string-level clean only
-      const cleaned = cleanHTML(original);
-      const minified = cleanEditorCode(cleaned);
-      if (minified !== original) {
-        pushUndo(minified);
-        textarea.value = minified;
+        pushUndo(cleaned);
+        textarea.value = cleaned;
         updateHL();
-        toast('Tự động dọn sạch HTML ✓');
-      }
+        if (fd && fd.body) fd.body.innerHTML = cleaned;
+      });
+      toast('Tự động chuẩn hóa HTML ✓');
     }
   }, 50);
 });
