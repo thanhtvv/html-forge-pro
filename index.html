@@ -346,7 +346,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <label class="mlabel" for="im-src">URL hình ảnh <span style="color:var(--accent)">*</span></label>
     <input class="minput" id="im-src" placeholder="https://example.com/image.jpg" type="url">
     <div style="margin:8px 0 12px">
-      <div id="im-preview-box" style="display:none;text-align:center;background:var(--glass-subtle);border:1px solid var(--glass-border2);border-radius:var(--radius-md);padding:10px;margin-top:6px">
+      <div id="im-preview-box" style="display:none;background:var(--glass-subtle);border:1px solid var(--glass-border2);border-radius:var(--radius-md);padding:10px;margin-top:6px">
         <img id="im-preview-img" src="" alt="" style="max-height:160px;max-width:100%;border-radius:6px;object-fit:contain;display:inline-block">
       </div>
     </div>
@@ -356,13 +356,13 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <input class="minput" id="im-title" placeholder="Tiêu đề khi hover...">
     <div class="mrow" style="gap:16px;flex-wrap:wrap">
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
-        <input type="checkbox" class="mck" id="im-figure"> Bọc trong &lt;figure&gt;
+        <input type="checkbox" class="mck" id="im-figure" checked> Bọc trong &lt;figure&gt;
       </label>
       <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
         <input type="checkbox" class="mck" id="im-lazy" checked> loading="lazy"
       </label>
     </div>
-    <div id="im-caption-wrap" style="display:none">
+    <div id="im-caption-wrap" style="display:block">
       <label class="mlabel" for="im-caption">Caption (figcaption)</label>
       <input class="minput" id="im-caption" placeholder="Chú thích hình ảnh...">
     </div>
@@ -1409,16 +1409,55 @@ document.getElementById('im-figure').addEventListener('change', function() {
   if (el) el.addEventListener('input', updateImgPreview);
 });
 
+function getSelectedImg() {
+  if (!fd) return null;
+  const sel = frame.contentWindow.getSelection();
+  if (!sel || !sel.rangeCount) return null;
+  const r = sel.getRangeAt(0);
+  if (r.startContainer.nodeType === 1 && r.startContainer.childNodes[r.startOffset]) {
+    const el = r.startContainer.childNodes[r.startOffset];
+    if (el.tagName === 'IMG') return el;
+    if (el.tagName === 'FIGURE') return el.querySelector('img');
+  }
+  let n = r.commonAncestorContainer;
+  if (n.nodeType === 3) n = n.parentNode;
+  if (n && n.closest) {
+    if (n.closest('img')) return n.closest('img');
+    if (n.closest('figure')) return n.closest('figure').querySelector('img');
+  }
+  return null;
+}
+
 function openImageModal(prefill) {
-  editingImg = prefill ? prefill.el : null;
+  if (!fd) initFrame();
+  editingImg = null; saveSel();
+  if (prefill && prefill.el) {
+    editingImg = prefill.el;
+  } else {
+    const existingImg = getSelectedImg();
+    if (existingImg) {
+      const fig = existingImg.closest('figure');
+      const cap = fig ? (fig.querySelector('figcaption') || {}).textContent || '' : '';
+      editingImg = fig || existingImg;
+      prefill = {
+         src: existingImg.getAttribute('src') || '',
+         alt: existingImg.getAttribute('alt') || '',
+         title: existingImg.getAttribute('title') || '',
+         lazy: existingImg.getAttribute('loading') === 'lazy',
+         fig: !!fig,
+         cap: cap
+      };
+    }
+  }
   const p = prefill || {};
   document.getElementById('im-src').value     = p.src   || '';
   document.getElementById('im-alt').value     = p.alt   || '';
   document.getElementById('im-title').value   = p.title || '';
   document.getElementById('im-lazy').checked  = p.lazy !== false;
-  document.getElementById('im-figure').checked = p.fig  || false;
+  const useFig = p.fig !== undefined ? p.fig : true;
+  document.getElementById('im-figure').checked = useFig;
   document.getElementById('im-caption').value = p.cap   || '';
-  document.getElementById('im-caption-wrap').style.display = p.fig ? 'block' : 'none';
+  document.getElementById('im-caption-wrap').style.display = useFig ? 'block' : 'none';
   document.getElementById('im-code-preview').textContent = '';
   document.getElementById('im-preview-box').style.display = p.src ? 'block' : 'none';
   if (p.src) document.getElementById('im-preview-img').src = p.src;
@@ -1453,6 +1492,7 @@ function insertImage() {
     editingImg = null;
     toast('Đã cập nhật hình ảnh ✓');
   } else {
+    restSel();
     // Chèn mới tại vị trí cursor
     const sel = frame.contentWindow.getSelection();
     if (sel && sel.rangeCount) {
@@ -1578,25 +1618,8 @@ document.addEventListener('click', e => {
 // FORMAT HTML / COPY
 // ─────────────────────────────────────────────
 function formatHTMLCode(html) {
-  let indent = 0;
-  const tc = '  ';
-  let formatted = '';
-  const tokens = html.replace(/>\s+</g, '><').split(/(<\/?[^>]+>)/g).filter(x => x.trim().length > 0);
-  tokens.forEach(token => {
-    if (token.match(/^<\/[^>]+>/)) {
-      indent = Math.max(0, indent - 1);
-      formatted += '\n' + tc.repeat(indent) + token;
-    } else if (token.match(/^<[^>]+>$/)) {
-      if (formatted.length > 0) formatted += '\n' + tc.repeat(indent);
-      formatted += token;
-      if (!token.match(/^(<img|<input|<br|<hr|<meta|<link|<area|<base|<col|<embed|<source|<track|<wbr)/i) && !token.match(/\/>$/) && !token.match(/^<!/)) {
-        indent++;
-      }
-    } else {
-      formatted += '\n' + tc.repeat(indent) + token.trim();
-    }
-  });
-  return formatted.trim().replace(/\n\s*\n/g, '\n');
+  return html.replace(/<!--[\s\S]*?-->/g,'').replace(/[ \t\r\n]+/g,' ')
+    .replace(/>\s+</g,'><').replace(/\s+>/g,'>').replace(/<\s+/g,'<').trim();
 }
 
 function formatEditorCode() {
