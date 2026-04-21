@@ -288,12 +288,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 
 <div id="obar">
   <span id="olbl">Output</span>
-  <div id="odisplay">— Paste hoặc nhấn Format để tự format theo chuẩn —</div>
-  <button class="obtn" onclick="formatEditorCode()">
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><polyline points="2,4 6,8 10,4"/><line x1="6" y1="8" x2="6" y2="1"/><line x1="1" y1="11" x2="11" y2="11"/></svg>Format
-  </button>
+  <div id="odisplay">— HTML được tự động dọn sạch khi Paste —</div>
   <button class="obtn cp" id="copy-btn" onclick="copyOutput()">
-    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><path d="M8 4V2.5A1.5 1.5 0 006.5 1h-4A1.5 1.5 0 001 2.5v4A1.5 1.5 0 002.5 8H4"/></svg>Copy
+    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.5"/><path d="M8 4V2.5A1.5 1.5 0 006.5 1h-4A1.5 1.5 0 001 2.5v4A1.5 1.5 0 002.5 8H4"/></svg>Copy HTML
   </button>
 </div>
 
@@ -346,7 +343,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <label class="mlabel" for="im-src">URL hình ảnh <span style="color:var(--accent)">*</span></label>
     <input class="minput" id="im-src" placeholder="https://example.com/image.jpg" type="url">
     <div style="margin:8px 0 12px">
-      <div id="im-preview-box" style="display:none;background:var(--glass-subtle);border:1px solid var(--glass-border2);border-radius:var(--radius-md);padding:10px;margin-top:6px">
+      <div id="im-preview-box" style="display:none;text-align:center;background:var(--glass-subtle);border:1px solid var(--glass-border2);border-radius:var(--radius-md);padding:10px;margin-top:6px">
         <img id="im-preview-img" src="" alt="" style="max-height:160px;max-width:100%;border-radius:6px;object-fit:contain;display:inline-block">
       </div>
     </div>
@@ -443,7 +440,7 @@ const ALLOWED_ATTRS = new Set([
 ]);
 
 // Pattern for browser-injected data attributes to ALWAYS strip
-const INJECTED_ATTR_RE = /^(bis_size|bis_href_counter|data-form-recovery|data-recovery|data-ms-editor|data-gramm|data-lt-|data-selectioncurrent|data-mce-|data-cke-|_bis_|grammarly|__ga|data-ogsc)/i;
+const INJECTED_ATTR_RE = /^(bis_size|bis_href_counter|data-form-recovery|data-recovery|data-ms-editor|data-gramm|data-lt-|data-selectioncurrent|data-mce-|data-cke-|_bis_|grammarly|__ga|data-ogsc|data-path-to-node|data-index-in-node)/i;
 
 /**
  * DOM-level sanitizer: walks all elements in a subtree
@@ -469,11 +466,7 @@ function sanitizeDOMAttrs(root) {
       // Strip any data-* that look like coordinate/size injection (bis pattern)
       // e.g. data-form-recovery-value with JSON coords
       if (name.startsWith('data-') && !ALLOWED_ATTRS.has(name)) {
-        // Keep if the value looks like user-intentional data (simple string, not JSON coords)
-        const val = attr.value;
-        if (val && (val.startsWith('{') || /&quot;[xy]&quot;/.test(val))) {
-          toRemove.push(attr.name);
-        }
+        toRemove.push(attr.name);
       }
     }
     toRemove.forEach(n => el.removeAttribute(n));
@@ -492,22 +485,10 @@ function sanitizeDOMAttrs(root) {
 // ─────────────────────────────────────────────
 function cleanHTML(html) {
   return html
-    // bis_size and any bis_* attributes (with or without quotes, handles &quot; encoded values)
-    .replace(/\s+bis_size\s*=\s*(?:"[^"]*"|'[^']*'|\S*)/gi, '')
-    .replace(/\s+bis_href_counter\s*=\s*(?:"[^"]*"|'[^']*'|\S*)/gi, '')
-    .replace(/\s+_bis_\w*\s*=\s*(?:"[^"]*"|'[^']*'|\S*)/gi, '')
-    // data-form-recovery family — these get the &quot; encoded values
-    .replace(/\s+data-form-recovery(?:-\w+)*\s*=\s*(?:"[^"]*"|'[^']*'|\S*)/gi, '')
-    .replace(/\s+data-recovery(?:-\w+)*\s*=\s*(?:"[^"]*"|'[^']*'|\S*)/gi, '')
-    // Grammarly injection
-    .replace(/\s+data-gramm(?:-\w+)*\s*=\s*(?:"[^"]*"|'[^']*'|\S*)/gi, '')
-    .replace(/\s+data-lt-\w*\s*=\s*(?:"[^"]*"|'[^']*'|\S*)/gi, '')
-    // MS Editor
-    .replace(/\s+data-ms-editor[^=]*\s*=\s*(?:"[^"]*"|'[^']*'|\S*)/gi, '')
-    // Catch serialized &quot; patterns from bis_size — the specific signature:
-    // attribute="{"x":...,"y":...}" → these get encoded to attribute="{&quot;x&quot;..."
-    // Strip any attribute whose value is a JSON coordinate object
-    .replace(/\s+[\w-]+\s*=\s*"\{&quot;[xy]&quot;[^"]*\}"/gi, '')
+    // Strip ALL data-* attributes generically (any source: Gemini, Grammarly, bis, MS, etc.)
+    .replace(/\s+data-[\w-]+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
+    // Also strip bis_* and _bis_* attributes
+    .replace(/\s+_?bis_[\w-]*\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]*)/gi, '')
     // Empty style artifacts
     .replace(/\s+style=""/gi, '')
     // Normalize: collapse multiple spaces between attributes (left by removals)
@@ -1615,44 +1596,46 @@ document.addEventListener('click', e => {
 });
 
 // ─────────────────────────────────────────────
-// FORMAT HTML / COPY
+// CLEAN ON PASTE / COPY
 // ─────────────────────────────────────────────
-function formatHTMLCode(html) {
-  return html.replace(/<!--[\s\S]*?-->/g,'').replace(/[ \t\r\n]+/g,' ')
+function cleanEditorCode(html) {
+  return html.replace(/[ \t\r\n]+/g,' ')
     .replace(/>\s+</g,'><').replace(/\s+>/g,'>').replace(/<\s+/g,'<').trim();
-}
-
-function formatEditorCode() {
-  const src = textarea.value || (fd ? fd.body.innerHTML : '');
-  const fmt = formatHTMLCode(src);
-  withSyncLock(() => {
-    pushUndo(fmt);
-    textarea.value = fmt;
-    updateHL();
-    if (fd && fd.body) fd.body.innerHTML = fmt;
-  });
-  odisplay.textContent = 'Đã format HTML (' + fmt.length + ' ký tự)';
-  toast('Đã format HTML theo chuẩn ✓');
 }
 
 textarea.addEventListener('paste', () => {
   setTimeout(() => {
     const original = textarea.value;
-    const fmt = formatHTMLCode(original);
-    if(fmt !== original) {
+    // First pass: DOM-level clean on iframe body
+    if (fd && fd.body) {
       withSyncLock(() => {
-        pushUndo(fmt);
-        textarea.value = fmt;
-        updateHL();
-        if (fd && fd.body) fd.body.innerHTML = fmt;
+        fd.body.innerHTML = original;
+        sanitizeDOMAttrs(fd.body);
+        const cleaned = cleanHTML(fd.body.innerHTML);
+        const minified = cleanEditorCode(cleaned);
+        if (minified !== original) {
+          pushUndo(minified);
+          textarea.value = minified;
+          updateHL();
+          fd.body.innerHTML = minified;
+          toast('Tự động dọn sạch HTML ✓');
+        }
       });
-      toast('Tự động Format HTML pasted ✓');
+    } else {
+      // Fallback: string-level clean only
+      const cleaned = cleanHTML(original);
+      const minified = cleanEditorCode(cleaned);
+      if (minified !== original) {
+        pushUndo(minified);
+        textarea.value = minified;
+        updateHL();
+        toast('Tự động dọn sạch HTML ✓');
+      }
     }
-  }, 30);
+  }, 50);
 });
 function copyOutput() {
-  formatEditorCode();
-  const textToCopy = textarea.value;
+  const textToCopy = textarea.value || (fd ? fd.body.innerHTML : '');
   if (!textToCopy) return;
   navigator.clipboard.writeText(textToCopy).then(()=>{
     const btn=document.getElementById('copy-btn');
