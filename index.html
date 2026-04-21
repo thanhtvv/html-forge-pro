@@ -837,52 +837,71 @@ function attachFrameEvents() {
     updateToolbarState();
   });
 
-  // Paste hình ảnh từ clipboard vào preview
+  // Paste vào preview: intercept HTML (chuẩn hóa) và ảnh
   fd.body.addEventListener('paste', function(e) {
-    const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-    let hasImg = false;
-    for (const item of items) {
-      if (item.type.startsWith('image/')) {
-        hasImg = true;
-        e.preventDefault();
-        const file = item.getAsFile();
-        if (!file) continue;
-        // Giới hạn 3MB
-        if (file.size > 3 * 1024 * 1024) {
-          toast('⚠️ Hình quá lớn (tối đa 3MB)');
-          return;
-        }
-        const reader = new FileReader();
-        reader.onload = function(ev) {
-          const base64 = ev.target.result;
-          pushUndo();
-          const imgTag = `<img src="${base64}" alt="" style="max-width:100%" loading="lazy">`;
-          const sel = frame.contentWindow.getSelection();
-          if (sel && sel.rangeCount) {
-            const r = sel.getRangeAt(0);
-            if (!r.collapsed) r.deleteContents();
-            const tmp = fd.createElement('span');
-            tmp.innerHTML = imgTag;
-            const frag = fd.createDocumentFragment();
-            while (tmp.firstChild) frag.appendChild(tmp.firstChild);
-            r.insertNode(frag);
-            r.collapse(false);
-            sel.removeAllRanges();
-            sel.addRange(r);
-          } else {
-            fd.execCommand('insertHTML', false, imgTag);
-          }
-          withSyncLock(() => {
-            sanitizeDOMAttrs(fd.body);
-            const newVal = cleanHTML(fd.body.innerHTML);
-            pushUndo(newVal); textarea.value = newVal; updateHL();
-          });
-          toast('Đã paste hình ảnh ✓');
-        };
-        reader.readAsDataURL(file);
-        break;
-      }
+    const cd = e.clipboardData || e.originalEvent.clipboardData;
+    const items = Array.from(cd.items);
+
+    // 1. Ảnh → paste base64 như cũ
+    const imgItem = items.find(i => i.type.startsWith('image/'));
+    if (imgItem) {
+      e.preventDefault();
+      const file = imgItem.getAsFile();
+      if (!file) return;
+      if (file.size > 3 * 1024 * 1024) { toast('⚠️ Hình quá lớn (tối đa 3MB)'); return; }
+      const reader = new FileReader();
+      reader.onload = function(ev) {
+        const base64 = ev.target.result;
+        pushUndo();
+        const imgTag = `<img src="${base64}" alt="" style="max-width:100%" loading="lazy">`;
+        const sel = frame.contentWindow.getSelection();
+        if (sel && sel.rangeCount) {
+          const r = sel.getRangeAt(0);
+          if (!r.collapsed) r.deleteContents();
+          const tmp = fd.createElement('span');
+          tmp.innerHTML = imgTag;
+          const frag = fd.createDocumentFragment();
+          while (tmp.firstChild) frag.appendChild(tmp.firstChild);
+          r.insertNode(frag); r.collapse(false);
+          sel.removeAllRanges(); sel.addRange(r);
+        } else { fd.execCommand('insertHTML', false, imgTag); }
+        withSyncLock(() => {
+          sanitizeDOMAttrs(fd.body);
+          const newVal = cleanHTML(fd.body.innerHTML);
+          pushUndo(newVal); textarea.value = newVal; updateHL();
+        });
+        toast('Đã paste hình ảnh ✓');
+      };
+      reader.readAsDataURL(file);
+      return;
     }
+
+    // 2. HTML text → intercept, clean, insert sạch
+    const htmlData = cd.getData('text/html');
+    if (htmlData && htmlData.trim()) {
+      e.preventDefault();
+      pushUndo();
+      const cleaned = deepCleanHTML(htmlData);
+      const sel = frame.contentWindow.getSelection();
+      if (sel && sel.rangeCount) {
+        const r = sel.getRangeAt(0);
+        if (!r.collapsed) r.deleteContents();
+        const tmp = fd.createElement('div');
+        tmp.innerHTML = cleaned;
+        const frag = fd.createDocumentFragment();
+        while (tmp.firstChild) frag.appendChild(tmp.firstChild);
+        r.insertNode(frag); r.collapse(false);
+        sel.removeAllRanges(); sel.addRange(r);
+      } else { fd.execCommand('insertHTML', false, cleaned); }
+      withSyncLock(() => {
+        sanitizeDOMAttrs(fd.body);
+        const newVal = cleanHTML(fd.body.innerHTML);
+        pushUndo(newVal); textarea.value = newVal; updateHL();
+      });
+      toast('Tự động chuẩn hóa HTML ✓');
+      return;
+    }
+    // 3. Plain text → để browser xử lý tự nhiên, input event sẽ sync
   });
 }
 
@@ -1180,22 +1199,18 @@ function insertLink() {
     setTimeout(()=>document.getElementById('m-url').style.borderColor='',1500);
     return;
   }
-  // IMPORTANT: save editingAnchor BEFORE closeLinkModal() nullifies it
-  const targetAnchor = editingAnchor;
-  closeLinkModal();
-  if (!fd) initFrame();
-  pushUndo();
-
-  if (targetAnchor) {
-    // ── CHẾ ĐỘ SỬA: update attributes trực tiếp trên node ──
-    targetAnchor.setAttribute('href', url);
-    if (title) targetAnchor.setAttribute('title', title); else targetAnchor.removeAttribute('title');
-    if (blank) targetAnchor.setAttribute('target', '_blank'); else targetAnchor.removeAttribute('target');
+  closeLinkModal(); if (!fd) initFrame(); pushUndo();
+  if (editingAnchor) {
+    // — Sửa link đã có: chỉ update attributes, không đụng vị trí cursor —
+    editingAnchor.setAttribute('href', url);
+    if (title) editingAnchor.setAttribute('title', title); else editingAnchor.removeAttribute('title');
+    if (blank) editingAnchor.setAttribute('target', '_blank'); else editingAnchor.removeAttribute('target');
     const d = text || url;
-    targetAnchor.innerHTML = strong ? `<strong>${d}</strong>` : d;
+    editingAnchor.innerHTML = strong ? `<strong>${d}</strong>` : d;
+    editingAnchor = null;
     toast('Đã cập nhật liên kết ✓');
   } else {
-    // ── CHẾ ĐỘ CHÈN MỚI: khôi phục vùng chọn đã lưu ──
+    // — Chèn link mới: khôi phục vùng chọn đã lưu, rồi mới thao tác —
     restSel();
     const inner = strong ? `<strong>${text||url}</strong>` : (text||url);
     const titleAttr = title ? ` title="${title.replace(/"/g,'&quot;')}"` : '';
@@ -1208,7 +1223,7 @@ function insertLink() {
       if (n.nodeType === 3) n = n.parentNode;
       const existA = n.closest ? n.closest('a') : null;
       if (existA) {
-        // Đang đứng trong link cũ → thay thế node đó
+        // Đang đứng trong link cũ → thay thế hẳn node đó
         existA.setAttribute('href', url);
         if (title) existA.setAttribute('title', title); else existA.removeAttribute('title');
         if (blank) existA.setAttribute('target', '_blank'); else existA.removeAttribute('target');
@@ -1226,6 +1241,7 @@ function insertLink() {
         sel.addRange(r);
       }
     } else {
+      // Không có selection: chèn tại vị trí caret cuối body — dùng execCommand
       frame.contentWindow.focus();
       fd.execCommand('insertHTML', false, lh);
     }
@@ -1464,24 +1480,20 @@ function insertImage() {
     setTimeout(() => document.getElementById('im-src').style.borderColor = '', 1500);
     return;
   }
-  // IMPORTANT: save editingImg BEFORE closeImageModal() nullifies it
-  const targetNode = editingImg;
   closeImageModal();
   if (!fd) initFrame();
   pushUndo();
-
-  if (targetNode) {
-    // ── CHẾ ĐỘ SỬA: thay thế node cũ trực tiếp ──
+  if (editingImg) {
+    // Thay thế node hình cũ
     const tmp = fd.createElement('span');
     tmp.innerHTML = markup;
     const newNode = tmp.firstChild;
-    if (targetNode.parentNode) {
-      targetNode.parentNode.replaceChild(newNode, targetNode);
-    }
+    editingImg.parentNode.replaceChild(newNode, editingImg);
+    editingImg = null;
     toast('Đã cập nhật hình ảnh ✓');
   } else {
-    // ── CHẾ ĐỘ CHÈN MỚI: khôi phục vùng chọn đã lưu ──
     restSel();
+    // Chèn mới tại vị trí cursor
     const sel = frame.contentWindow.getSelection();
     if (sel && sel.rangeCount) {
       const r = sel.getRangeAt(0);
