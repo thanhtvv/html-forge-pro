@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="vi" data-theme="light">
 <head>
@@ -144,8 +145,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .ac-tag{color:var(--syn-tag);font-weight:500}
 .ac-hint{font-size:10.5px;color:var(--text3);margin-left:auto;font-family:var(--font-ui)}
 /* LINK MODAL */
-#link-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:var(--blur-lg);z-index:999;align-items:center;justify-content:center}
-#link-modal.show{display:flex}
+#link-modal,#img-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:var(--blur-lg);z-index:999;align-items:center;justify-content:center}
+#link-modal.show,#img-modal.show{display:flex}
 .mbox{background:var(--glass-heavy);backdrop-filter:var(--blur-xl);-webkit-backdrop-filter:var(--blur-xl);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:24px 26px;width:420px;max-width:92vw;box-shadow:0 2px 0 rgba(255,255,255,.6) inset,0 24px 80px rgba(0,0,0,.2);animation:modalIn .25s cubic-bezier(.34,1.56,.64,1)}
 @keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .mtitle{font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:8px}
@@ -161,9 +162,9 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .mbtn.ok{background:var(--accent-glass);color:var(--accent);border-color:var(--accent-glow)}
 .mbtn.ok:hover{box-shadow:0 0 14px var(--accent-glow)}
 /* LINK POPUP */
-#link-popup{display:none;position:fixed;z-index:9999;background:var(--glass-heavy);backdrop-filter:var(--blur-xl);-webkit-backdrop-filter:var(--blur-xl);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:12px 16px;box-shadow:0 2px 0 rgba(255,255,255,.5) inset,0 12px 40px var(--glass-shadow);min-width:290px;max-width:370px;animation:popIn .18s cubic-bezier(.34,1.56,.64,1)}
+#link-popup,#img-popup{display:none;position:fixed;z-index:9999;background:var(--glass-heavy);backdrop-filter:var(--blur-xl);-webkit-backdrop-filter:var(--blur-xl);border:1px solid var(--glass-border);border-radius:var(--radius-lg);padding:12px 16px;box-shadow:0 2px 0 rgba(255,255,255,.5) inset,0 12px 40px var(--glass-shadow);min-width:290px;max-width:370px;animation:popIn .18s cubic-bezier(.34,1.56,.64,1)}
 @keyframes popIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
-#link-popup.show{display:block}
+#link-popup.show,#img-popup.show{display:block}
 .pop-title{font-size:10.5px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:8px}
 .pop-url{width:100%;padding:6px 9px;border-radius:var(--radius-sm);border:1px solid var(--glass-border2);background:var(--glass-subtle);color:var(--text);font-family:var(--font-mono);font-size:11.5px;outline:none;margin-bottom:8px;transition:border-color .2s}
 .pop-url:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-bg)}
@@ -242,11 +243,15 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   <button class="tb" onclick="fmt('indent')">→|</button>
   <button class="tb" onclick="fmt('outdent')">|←</button>
   <div class="sep"></div>
-  <button class="tb" id="tb-link" onclick="openLinkModal()">
+  <button class="tb" id="tb-link" onclick="openLinkModal()" title="Gắn link (Ctrl+K)">
     <svg width="15" height="9" viewBox="0 0 15 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4.5H9"/><path d="M1.5 4.5a3 3 0 003 3h1"/><path d="M10 7.5h1a3 3 0 000-6h-1"/><path d="M5 1.5H4a3 3 0 000 6h1"/></svg>Link
   </button>
   <button class="tb" onclick="fmt('unlink')" style="font-size:10px">✕Link</button>
   <button class="tb" onclick="fmt('removeFormat')" style="font-size:10px">✕fmt</button>
+  <div class="sep"></div>
+  <button class="tb" id="tb-img" onclick="openImageModal()" title="Chèn / chỉnh hình ảnh">
+    <svg width="15" height="13" viewBox="0 0 15 13" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="13" height="11" rx="2"/><circle cx="5" cy="4.5" r="1.2"/><path d="M1 9l3.5-3.5 2.5 2.5 2-2 4 4"/></svg>Hình
+  </button>
   <div class="sep"></div>
   <button class="tb" onclick="doUndo()"><svg width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1.5 6C1.5 3.5 3.5 1.5 6.5 1.5c2 0 3.5 1 4.5 2.5"/><polyline points="1.5,1.5 1.5,6 6,6"/></svg></button>
   <button class="tb" onclick="doRedo()"><svg width="13" height="11" viewBox="0 0 13 11" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11.5 6C11.5 3.5 9.5 1.5 6.5 1.5 4.5 1.5 3 2.5 2 4"/><polyline points="11.5,1.5 11.5,6 7,6"/></svg></button>
@@ -328,6 +333,78 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <button class="pop-btn" onclick="openLinkModalFromPopup()">Chi tiết</button>
     <button class="pop-btn rm" onclick="removeLinkPopup()">Xóa</button>
     <button class="pop-btn" onclick="closeLinkPopup()">✕</button>
+  </div>
+</div>
+
+<!-- IMAGE MODAL -->
+<div id="img-modal">
+  <div class="mbox" style="max-width:480px;width:90vw">
+    <div class="mtitle">
+      <svg width="16" height="14" viewBox="0 0 16 14" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="14" height="12" rx="2"/><circle cx="5.5" cy="5" r="1.3"/><path d="M1 10l4-4 3 3 2-2 5 5"/></svg>
+      <span id="img-modal-title">Chèn hình ảnh</span>
+    </div>
+    <label class="mlabel" for="im-src">URL hình ảnh <span style="color:var(--accent)">*</span></label>
+    <input class="minput" id="im-src" placeholder="https://example.com/image.jpg" type="url">
+    <div style="margin:8px 0 12px">
+      <div id="im-preview-box" style="display:none;text-align:center;background:var(--glass-subtle);border:1px solid var(--glass-border2);border-radius:var(--radius-md);padding:10px;margin-top:6px">
+        <img id="im-preview-img" src="" alt="" style="max-height:160px;max-width:100%;border-radius:6px;object-fit:contain;display:inline-block">
+      </div>
+    </div>
+    <label class="mlabel" for="im-alt">Alt text (mô tả hình)</label>
+    <input class="minput" id="im-alt" placeholder="Mô tả nội dung hình ảnh...">
+    <label class="mlabel" for="im-title">Title (tooltip khi hover)</label>
+    <input class="minput" id="im-title" placeholder="Tiêu đề khi hover...">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div>
+        <label class="mlabel" for="im-width">Chiều rộng</label>
+        <input class="minput" id="im-width" placeholder="vd: 100% hoặc 400px">
+      </div>
+      <div>
+        <label class="mlabel" for="im-height">Chiều cao</label>
+        <input class="minput" id="im-height" placeholder="vd: auto hoặc 300px">
+      </div>
+    </div>
+    <label class="mlabel" for="im-class">Class CSS</label>
+    <input class="minput" id="im-class" placeholder="vd: rounded, img-fluid...">
+    <label class="mlabel" for="im-style">Style inline</label>
+    <input class="minput" id="im-style" placeholder="vd: border-radius:8px; margin:auto">
+    <div class="mrow" style="gap:16px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
+        <input type="checkbox" class="mck" id="im-figure"> Bọc trong &lt;figure&gt;
+      </label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);cursor:pointer">
+        <input type="checkbox" class="mck" id="im-lazy" checked> loading="lazy"
+      </label>
+    </div>
+    <div id="im-caption-wrap" style="display:none">
+      <label class="mlabel" for="im-caption">Caption (figcaption)</label>
+      <input class="minput" id="im-caption" placeholder="Chú thích hình ảnh...">
+    </div>
+    <div style="border-top:1px solid var(--glass-border2);padding-top:12px;margin-top:8px">
+      <label class="mlabel" style="margin-bottom:7px">Preview HTML</label>
+      <div id="im-code-preview" style="font-family:var(--font-mono);font-size:11px;color:var(--accent);background:var(--glass-subtle);padding:9px 12px;border-radius:10px;border:1px solid var(--glass-border2);min-height:28px;word-break:break-all;line-height:1.6;white-space:pre-wrap"></div>
+    </div>
+    <div class="mbtns" style="margin-top:14px">
+      <button class="mbtn" onclick="closeImageModal()">Huỷ</button>
+      <button class="mbtn ok" id="im-ok-btn" onclick="insertImage()">Chèn hình ảnh</button>
+    </div>
+  </div>
+</div>
+
+<!-- IMAGE QUICK POPUP -->
+<div id="img-popup">
+  <div class="pop-title">🖼️ Hình ảnh</div>
+  <input class="pop-url" id="ip-src" type="url" placeholder="URL hình..." style="margin-bottom:6px">
+  <input class="pop-url" id="ip-alt" type="text" placeholder="Alt text..." style="margin-bottom:6px">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px">
+    <input class="pop-url" id="ip-width" type="text" placeholder="Rộng (vd: 100%)">
+    <input class="pop-url" id="ip-height" type="text" placeholder="Cao (vd: auto)">
+  </div>
+  <div class="pop-row">
+    <button class="pop-btn ok" onclick="applyImgPopup()">Lưu</button>
+    <button class="pop-btn" onclick="openImageModalFromPopup()">Chi tiết</button>
+    <button class="pop-btn rm" onclick="removeImgPopup()">Xóa</button>
+    <button class="pop-btn" onclick="closeImgPopup()">✕</button>
   </div>
 </div>
 
@@ -749,11 +826,7 @@ function initFrame() {
       });
     });
 
-fd.addEventListener('selectionchange', () => {
-      updateToolbarState();
-    });
-
-    // Attach MutationObserver to intercept injected attrs before input fires
+// Attach MutationObserver to intercept injected attrs before input fires
     attachMutationObserver();
     attachFrameEvents();
 
@@ -766,10 +839,40 @@ fd.addEventListener('selectionchange', () => {
 function attachFrameEvents() {
   if (!fd) return;
   fd.body.addEventListener('click', function(e) {
+    // Click vào hình ảnh → mở img popup
+    const img = e.target.closest('img');
+    if (img) {
+      e.preventDefault(); e.stopPropagation();
+      closeLinkPopup();
+      openImgPopup(img, e);
+      return;
+    }
+    // Click vào link → chọn toàn node, mở link popup
     const a = e.target.closest('a');
-    if (a) { e.preventDefault(); e.stopPropagation(); openLinkPopup(a, e); return; }
+    if (a) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeImgPopup();
+      // Chọn toàn bộ nội dung link để toolbar (bold/italic/...) hoạt động
+      try {
+        const win = frame.contentWindow;
+        const sel = win.getSelection();
+        const r = fd.createRange();
+        r.selectNodeContents(a);
+        sel.removeAllRanges();
+        sel.addRange(r);
+      } catch(_) {}
+      openLinkPopup(a, e);
+      updateToolbarState();
+      return;
+    }
     closeLinkPopup();
+    closeImgPopup();
   }, true);
+  // Khi selectionchange trong iframe: cập nhật toolbar trạng thái
+  fd.addEventListener('selectionchange', () => {
+    updateToolbarState();
+  });
 }
 
 // ─────────────────────────────────────────────
@@ -905,12 +1008,14 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key==='z' && inTA) { e.preventDefault(); doUndo(); }
   if ((e.ctrlKey||e.metaKey) && e.key==='y' && inTA) { e.preventDefault(); doRedo(); }
   if ((e.ctrlKey||e.metaKey) && e.shiftKey && e.key==='z' && inTA) { e.preventDefault(); doRedo(); }
+  if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); openLinkModal(); }
 });
 frame.addEventListener('load', () => {
   if (!frame.contentWindow) return;
   frame.contentWindow.addEventListener('keydown', e => {
     if ((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key==='z') { e.preventDefault(); doUndo(); }
     if ((e.ctrlKey||e.metaKey) && (e.key==='y'||(e.shiftKey&&e.key==='z'))) { e.preventDefault(); doRedo(); }
+    if ((e.ctrlKey||e.metaKey) && e.key==='k') { e.preventDefault(); openLinkModal(); }
   });
 });
 
@@ -1066,43 +1171,56 @@ function insertLink() {
   }
   closeLinkModal(); if (!fd) initFrame(); pushUndo();
   if (editingAnchor) {
-    editingAnchor.setAttribute('href',url);
-    if (title) editingAnchor.setAttribute('title',title); else editingAnchor.removeAttribute('title');
-    if (blank) editingAnchor.setAttribute('target','_blank'); else editingAnchor.removeAttribute('target');
-    const d=text||url;
-    editingAnchor.innerHTML=strong?`<strong>${d}</strong>`:d;
-    editingAnchor=null;
+    // — Sửa link đã có: chỉ update attributes, không đụng vị trí cursor —
+    editingAnchor.setAttribute('href', url);
+    if (title) editingAnchor.setAttribute('title', title); else editingAnchor.removeAttribute('title');
+    if (blank) editingAnchor.setAttribute('target', '_blank'); else editingAnchor.removeAttribute('target');
+    const d = text || url;
+    editingAnchor.innerHTML = strong ? `<strong>${d}</strong>` : d;
+    editingAnchor = null;
     toast('Đã cập nhật liên kết ✓');
   } else {
+    // — Chèn link mới: khôi phục vùng chọn đã lưu, rồi mới thao tác —
     restSel();
-    const inner=strong?`<strong>${text||url}</strong>`:(text||url);
-    const lh=`<a href="${url}"${title?` title="${title.replace(/"/g,'&quot;')}"` :''}${blank?' target="_blank"':''}>${inner}</a>`;
-    const sel=frame.contentWindow.getSelection();
-    if (sel&&sel.rangeCount) {
-      const r=sel.getRangeAt(0);
-      let n=r.commonAncestorContainer;
-      if (n.nodeType===3) n=n.parentNode;
-      const existA=n.closest?n.closest('a'):null;
+    const inner = strong ? `<strong>${text||url}</strong>` : (text||url);
+    const titleAttr = title ? ` title="${title.replace(/"/g,'&quot;')}"` : '';
+    const blankAttr = blank ? ' target="_blank"' : '';
+    const lh = `<a href="${url}"${titleAttr}${blankAttr}>${inner}</a>`;
+    const sel = frame.contentWindow.getSelection();
+    if (sel && sel.rangeCount) {
+      const r = sel.getRangeAt(0);
+      let n = r.commonAncestorContainer;
+      if (n.nodeType === 3) n = n.parentNode;
+      const existA = n.closest ? n.closest('a') : null;
       if (existA) {
-        const tmp=fd.createElement('span'); tmp.innerHTML=lh;
-        existA.parentNode.replaceChild(tmp.firstChild,existA);
+        // Đang đứng trong link cũ → thay thế hẳn node đó
+        existA.setAttribute('href', url);
+        if (title) existA.setAttribute('title', title); else existA.removeAttribute('title');
+        if (blank) existA.setAttribute('target', '_blank'); else existA.removeAttribute('target');
+        const d2 = text || url;
+        existA.innerHTML = strong ? `<strong>${d2}</strong>` : d2;
       } else {
         if (!r.collapsed) r.deleteContents();
-        const tmp=fd.createElement('span'); tmp.innerHTML=lh;
-        const frag=fd.createDocumentFragment();
-        while(tmp.firstChild) frag.appendChild(tmp.firstChild);
-        r.insertNode(frag); r.collapse(false);
-        sel.removeAllRanges(); sel.addRange(r);
+        const tmp = fd.createElement('span');
+        tmp.innerHTML = lh;
+        const frag = fd.createDocumentFragment();
+        while (tmp.firstChild) frag.appendChild(tmp.firstChild);
+        r.insertNode(frag);
+        r.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(r);
       }
     } else {
-      fd.body.innerHTML+=' '+lh;
+      // Không có selection: chèn tại vị trí caret cuối body — dùng execCommand
+      frame.contentWindow.focus();
+      fd.execCommand('insertHTML', false, lh);
     }
     toast('Đã chèn liên kết ✓');
   }
   withSyncLock(() => {
     sanitizeDOMAttrs(fd.body);
-    const newVal=cleanHTML(fd.body.innerHTML);
-    pushUndo(newVal); textarea.value=newVal; updateHL();
+    const newVal = cleanHTML(fd.body.innerHTML);
+    pushUndo(newVal); textarea.value = newVal; updateHL();
   });
 }
 
@@ -1207,6 +1325,249 @@ document.addEventListener('click', e => {
       if (e.key === 'Escape') closeLinkPopup();
     });
   }
+});
+
+
+// ─────────────────────────────────────────────
+// IMAGE MODAL
+// ─────────────────────────────────────────────
+let editingImg = null;
+
+function buildImgHTML() {
+  const src   = document.getElementById('im-src').value.trim();
+  const alt   = document.getElementById('im-alt').value.trim();
+  const title = document.getElementById('im-title').value.trim();
+  const w     = document.getElementById('im-width').value.trim();
+  const h     = document.getElementById('im-height').value.trim();
+  const cls   = document.getElementById('im-class').value.trim();
+  const sty   = document.getElementById('im-style').value.trim();
+  const lazy  = document.getElementById('im-lazy').checked;
+  const fig   = document.getElementById('im-figure').checked;
+  const cap   = document.getElementById('im-caption').value.trim();
+  if (!src) return '';
+  let attrs = `src="${src}"`;
+  attrs += ` alt="${alt.replace(/"/g,'&quot;')}"`;
+  if (title) attrs += ` title="${title.replace(/"/g,'&quot;')}"`;
+  if (w)     attrs += ` width="${w}"`;
+  if (h)     attrs += ` height="${h}"`;
+  if (cls)   attrs += ` class="${cls}"`;
+  const styles = [];
+  if (!w && !h) styles.push('max-width:100%');
+  if (sty) styles.push(sty.replace(/;$/, ''));
+  if (styles.length) attrs += ` style="${styles.join(';')}"`;
+  if (lazy) attrs += ' loading="lazy"';
+  const imgTag = `<img ${attrs}>`;
+  if (fig) {
+    return cap
+      ? `<figure>
+  ${imgTag}
+  <figcaption>${cap}</figcaption>
+</figure>`
+      : `<figure>
+  ${imgTag}
+</figure>`;
+  }
+  return imgTag;
+}
+
+function updateImgPreview() {
+  const src = document.getElementById('im-src').value.trim();
+  const box = document.getElementById('im-preview-box');
+  const pi  = document.getElementById('im-preview-img');
+  if (src) { pi.src = src; box.style.display = 'block'; }
+  else     { box.style.display = 'none'; pi.src = ''; }
+  document.getElementById('im-code-preview').textContent = buildImgHTML();
+}
+
+document.getElementById('im-figure').addEventListener('change', function() {
+  document.getElementById('im-caption-wrap').style.display = this.checked ? 'block' : 'none';
+  updateImgPreview();
+});
+
+['im-src','im-alt','im-title','im-width','im-height','im-class','im-style','im-lazy','im-caption'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateImgPreview);
+});
+
+function openImageModal(prefill) {
+  editingImg = prefill ? prefill.el : null;
+  const p = prefill || {};
+  document.getElementById('im-src').value     = p.src   || '';
+  document.getElementById('im-alt').value     = p.alt   || '';
+  document.getElementById('im-title').value   = p.title || '';
+  document.getElementById('im-width').value   = p.width || '';
+  document.getElementById('im-height').value  = p.height|| '';
+  document.getElementById('im-class').value   = p.cls   || '';
+  document.getElementById('im-style').value   = p.sty   || '';
+  document.getElementById('im-lazy').checked  = p.lazy !== false;
+  document.getElementById('im-figure').checked = p.fig  || false;
+  document.getElementById('im-caption').value = p.cap   || '';
+  document.getElementById('im-caption-wrap').style.display = p.fig ? 'block' : 'none';
+  document.getElementById('im-code-preview').textContent = '';
+  document.getElementById('im-preview-box').style.display = p.src ? 'block' : 'none';
+  if (p.src) document.getElementById('im-preview-img').src = p.src;
+  document.getElementById('img-modal-title').textContent = editingImg ? 'Chỉnh sửa hình ảnh' : 'Chèn hình ảnh';
+  document.getElementById('im-ok-btn').textContent = editingImg ? 'Lưu thay đổi' : 'Chèn hình ảnh';
+  document.getElementById('img-modal').classList.add('show');
+  setTimeout(() => document.getElementById('im-src').focus(), 60);
+  updateImgPreview();
+}
+
+function closeImageModal() {
+  document.getElementById('img-modal').classList.remove('show');
+  editingImg = null;
+}
+
+function insertImage() {
+  const markup = buildImgHTML();
+  if (!markup) {
+    document.getElementById('im-src').style.borderColor = '#ff453a';
+    setTimeout(() => document.getElementById('im-src').style.borderColor = '', 1500);
+    return;
+  }
+  closeImageModal();
+  if (!fd) initFrame();
+  pushUndo();
+  if (editingImg) {
+    // Thay thế node hình cũ
+    const tmp = fd.createElement('span');
+    tmp.innerHTML = markup;
+    const newNode = tmp.firstChild;
+    editingImg.parentNode.replaceChild(newNode, editingImg);
+    editingImg = null;
+    toast('Đã cập nhật hình ảnh ✓');
+  } else {
+    // Chèn mới tại vị trí cursor
+    const sel = frame.contentWindow.getSelection();
+    if (sel && sel.rangeCount) {
+      const r = sel.getRangeAt(0);
+      if (!r.collapsed) r.deleteContents();
+      const tmp = fd.createElement('span');
+      tmp.innerHTML = markup;
+      const frag = fd.createDocumentFragment();
+      while (tmp.firstChild) frag.appendChild(tmp.firstChild);
+      r.insertNode(frag);
+      r.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(r);
+    } else {
+      frame.contentWindow.focus();
+      fd.execCommand('insertHTML', false, markup);
+    }
+    toast('Đã chèn hình ảnh ✓');
+  }
+  withSyncLock(() => {
+    sanitizeDOMAttrs(fd.body);
+    const newVal = cleanHTML(fd.body.innerHTML);
+    pushUndo(newVal); textarea.value = newVal; updateHL();
+  });
+}
+
+document.getElementById('img-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeImageModal();
+});
+document.getElementById('img-modal').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && e.target.tagName !== 'BUTTON') insertImage();
+  if (e.key === 'Escape') closeImageModal();
+});
+
+// ─────────────────────────────────────────────
+// IMAGE QUICK POPUP (click vào hình trong preview)
+// ─────────────────────────────────────────────
+let currentPopupImg = null;
+
+function openImgPopup(img, ev) {
+  currentPopupImg = img;
+  document.getElementById('ip-src').value    = img.getAttribute('src')   || '';
+  document.getElementById('ip-alt').value    = img.getAttribute('alt')   || '';
+  document.getElementById('ip-width').value  = img.getAttribute('width') || img.style.width  || '';
+  document.getElementById('ip-height').value = img.getAttribute('height')|| img.style.height || '';
+  const fr = frame.getBoundingClientRect();
+  const px = Math.min(fr.left + (ev ? ev.clientX : fr.width / 2), window.innerWidth - 320);
+  const py = Math.min(fr.top + (ev ? ev.clientY : fr.height / 2) + 20, window.innerHeight - 200);
+  const pp = document.getElementById('img-popup');
+  pp.style.left = px + 'px';
+  pp.style.top  = py + 'px';
+  pp.classList.add('show');
+}
+
+function closeImgPopup() {
+  document.getElementById('img-popup').classList.remove('show');
+  currentPopupImg = null;
+}
+
+function applyImgPopup() {
+  if (!currentPopupImg) return;
+  const src = document.getElementById('ip-src').value.trim();
+  const alt = document.getElementById('ip-alt').value.trim();
+  const w   = document.getElementById('ip-width').value.trim();
+  const h   = document.getElementById('ip-height').value.trim();
+  if (!src) return;
+  pushUndo();
+  currentPopupImg.setAttribute('src', src);
+  currentPopupImg.setAttribute('alt', alt);
+  if (w) { currentPopupImg.setAttribute('width', w); currentPopupImg.style.width = ''; }
+  else   { currentPopupImg.removeAttribute('width'); }
+  if (h) { currentPopupImg.setAttribute('height', h); currentPopupImg.style.height = ''; }
+  else   { currentPopupImg.removeAttribute('height'); }
+  withSyncLock(() => {
+    sanitizeDOMAttrs(fd.body);
+    const newVal = cleanHTML(fd.body.innerHTML);
+    pushUndo(newVal); textarea.value = newVal; updateHL();
+  });
+  toast('Đã cập nhật hình ✓');
+  closeImgPopup();
+}
+
+function openImageModalFromPopup() {
+  if (!currentPopupImg) return;
+  const img = currentPopupImg;
+  const fig = img.closest('figure');
+  const cap = fig ? (fig.querySelector('figcaption') || {}).textContent || '' : '';
+  const sty = img.getAttribute('style') || '';
+  closeImgPopup();
+  openImageModal({
+    el: img,
+    src:    img.getAttribute('src')   || '',
+    alt:    img.getAttribute('alt')   || '',
+    title:  img.getAttribute('title') || '',
+    width:  img.getAttribute('width') || '',
+    height: img.getAttribute('height')|| '',
+    cls:    img.getAttribute('class') || '',
+    sty:    sty,
+    lazy:   img.getAttribute('loading') === 'lazy',
+    fig:    !!fig,
+    cap:    cap
+  });
+}
+
+function removeImgPopup() {
+  if (!currentPopupImg) return;
+  pushUndo();
+  const img = currentPopupImg;
+  const fig = img.closest('figure');
+  const target = fig || img;
+  target.parentNode.removeChild(target);
+  withSyncLock(() => {
+    sanitizeDOMAttrs(fd.body);
+    const newVal = cleanHTML(fd.body.innerHTML);
+    pushUndo(newVal); textarea.value = newVal; updateHL();
+  });
+  toast('Đã xóa hình ảnh');
+  closeImgPopup();
+}
+
+['ip-src','ip-alt','ip-width','ip-height'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('keydown', e => {
+    if (e.key === 'Enter') applyImgPopup();
+    if (e.key === 'Escape') closeImgPopup();
+  });
+});
+
+document.addEventListener('click', e => {
+  const pp = document.getElementById('img-popup');
+  if (pp.classList.contains('show') && !pp.contains(e.target) && e.target !== frame) closeImgPopup();
 });
 
 // ─────────────────────────────────────────────
