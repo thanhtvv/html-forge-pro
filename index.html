@@ -145,8 +145,8 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
 .ac-tag{color:var(--syn-tag);font-weight:500}
 .ac-hint{font-size:10.5px;color:var(--text3);margin-left:auto;font-family:var(--font-ui)}
 /* LINK MODAL */
-#link-modal,#img-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:var(--blur-lg);z-index:999;align-items:center;justify-content:center}
-#link-modal.show,#img-modal.show{display:flex}
+#link-modal,#img-modal,#all-links-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);backdrop-filter:var(--blur-lg);z-index:999;align-items:center;justify-content:center}
+#link-modal.show,#img-modal.show,#all-links-modal.show{display:flex}
 .mbox{background:var(--glass-heavy);backdrop-filter:var(--blur-xl);-webkit-backdrop-filter:var(--blur-xl);border:1px solid var(--glass-border);border-radius:var(--radius-xl);padding:24px 26px;width:420px;max-width:92vw;box-shadow:0 2px 0 rgba(255,255,255,.6) inset,0 24px 80px rgba(0,0,0,.2);animation:modalIn .25s cubic-bezier(.34,1.56,.64,1)}
 @keyframes modalIn{from{opacity:0;transform:scale(.92) translateY(12px)}to{opacity:1;transform:scale(1) translateY(0)}}
 .mtitle{font-size:15px;font-weight:700;color:var(--text);margin-bottom:20px;display:flex;align-items:center;gap:8px}
@@ -280,7 +280,7 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
   <div class="panel" id="rp" style="flex:1">
     <div class="pbar">
       <div class="ptitle"><div class="dot b"></div>Preview — Edit trực tiếp</div>
-      <span style="font-size:10px;color:var(--text3)"></span>
+      <span id="link-counter" style="font-size:11px;font-weight:500;color:var(--text3);display:flex;align-items:center"></span>
     </div>
     <iframe id="preview-frame" sandbox="allow-same-origin allow-scripts"></iframe>
   </div>
@@ -330,6 +330,22 @@ header{display:flex;align-items:center;justify-content:space-between;padding:0 2
     <button class="pop-btn" onclick="openLinkModalFromPopup()">Chi tiết</button>
     <button class="pop-btn rm" onclick="removeLinkPopup()">Xóa</button>
     <button class="pop-btn" onclick="closeLinkPopup()">✕</button>
+  </div>
+</div>
+
+<!-- ALL LINKS MODAL -->
+<div id="all-links-modal">
+  <div class="mbox" style="max-width:640px;width:95vw">
+    <div class="mtitle">
+      <svg width="16" height="10" viewBox="0 0 16 10" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-linecap="round"><path d="M6.5 5H9.5"/><path d="M1.5 5a3.5 3.5 0 003.5 3.5h1"/><path d="M11 8.5h1a3.5 3.5 0 000-7h-1"/><path d="M5 1.5H4a3.5 3.5 0 000 7h1"/></svg>
+      <span>Quản lý tất cả Links</span>
+    </div>
+    <div id="all-links-list" style="max-height:60vh;overflow-y:auto;padding-right:8px;margin-bottom:12px;display:flex;flex-direction:column;gap:10px">
+    </div>
+    <div class="mbtns" style="margin-top:14px;border-top:1px solid var(--glass-border2);padding-top:12px">
+      <button class="mbtn" onclick="closeAllLinksModal()">Huỷ</button>
+      <button class="mbtn ok" onclick="saveAllLinksModal()">Lưu tất cả</button>
+    </div>
   </div>
 </div>
 
@@ -584,10 +600,99 @@ function hlTags(code) {
       return `<span class="hl-tag">${esc(open)}${esc(tag)}</span>${hA}<span class="hl-tag">${esc(close)}</span>`;
     });
 }
+function updateStats() {
+  const val = textarea.value;
+  const text = val.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+  const words = text ? text.split(/\s+/).length : 0;
+  const chars = text.length;
+
+  let linkCount = 0;
+  const re = /<a\s+[^>]*href=["']([^"']*)["'][^>]*>/gi;
+  while (re.exec(val) !== null) linkCount++;
+
+  const lc = document.getElementById('link-counter');
+  if (lc) {
+    lc.innerHTML = `
+      <span style="color:var(--text2);margin-right:8px;font-size:11px">Từ: <b style="color:var(--text)">${words}</b></span>
+      <span style="color:var(--glass-border2);margin:0 8px">|</span>
+      <span style="color:var(--text2);margin-right:8px;font-size:11px">Ký tự: <b style="color:var(--text)">${chars}</b></span>
+      <span style="color:var(--glass-border2);margin:0 8px">|</span>
+      <button onclick="openAllLinksModal()" style="background:var(--accent-glass);color:var(--accent);border:1px solid rgba(10,132,255,.3);border-radius:4px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px">
+        <svg width="12" height="12" viewBox="0 0 15 9" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M6 4.5H9"/><path d="M1.5 4.5a3 3 0 003 3h1"/><path d="M10 7.5h1a3 3 0 000-6h-1"/><path d="M5 1.5H4a3 3 0 000 6h1"/></svg>
+        ${linkCount} Links
+      </button>
+    `;
+  }
+}
+
+let allLinksCache = [];
+function openAllLinksModal() {
+  if (!fd) return;
+  const listContainer = document.getElementById('all-links-list');
+  listContainer.innerHTML = '';
+  const links = fd.body.querySelectorAll('a');
+  allLinksCache = [];
+  
+  if (links.length === 0) {
+    listContainer.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Không có liên kết nào.</div>';
+  } else {
+    links.forEach((a, idx) => {
+      allLinksCache.push(a);
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;flex-direction:column;gap:6px;background:var(--glass-subtle);border:1px solid var(--glass-border2);padding:10px;border-radius:var(--radius-sm)';
+      const txtPreview = a.textContent.trim() || '(không có chữ)';
+      row.innerHTML = `
+        <div style="font-size:11.5px;color:var(--text2);font-weight:600">Link ${idx + 1}: <span style="color:var(--text);font-weight:400">${txtPreview.length > 50 ? txtPreview.substring(0,50)+'...' : txtPreview}</span></div>
+        <div style="display:flex;gap:8px">
+          <input type="url" class="minput all-link-input" data-idx="${idx}" value="${a.getAttribute('href') || ''}" placeholder="https://..." style="margin-bottom:0;flex:1;padding:6px 10px">
+        </div>
+      `;
+      listContainer.appendChild(row);
+    });
+  }
+  document.getElementById('all-links-modal').classList.add('show');
+}
+
+function closeAllLinksModal() {
+  document.getElementById('all-links-modal').classList.remove('show');
+  allLinksCache = [];
+}
+
+function saveAllLinksModal() {
+  if (!fd) return;
+  const inputs = document.querySelectorAll('.all-link-input');
+  let changed = false;
+  
+  pushUndo();
+  inputs.forEach(input => {
+    const idx = parseInt(input.getAttribute('data-idx'));
+    const a = allLinksCache[idx];
+    const newHref = input.value.trim();
+    if (a && newHref !== (a.getAttribute('href') || '')) {
+      if (newHref) a.setAttribute('href', newHref);
+      else a.removeAttribute('href');
+      changed = true;
+    }
+  });
+  
+  if (changed) {
+    withSyncLock(() => {
+      sanitizeDOMAttrs(fd.body);
+      const newVal = cleanHTML(fd.body.innerHTML);
+      pushUndo(newVal); 
+      textarea.value = newVal; 
+      updateHL();
+    });
+    toast('Đã cập nhật tất cả links ✓');
+  }
+  closeAllLinksModal();
+}
+
 function updateHL() {
   hlPre.innerHTML = highlight(textarea.value) + '\n';
   hlPre.scrollTop  = textarea.scrollTop;
   hlPre.scrollLeft = textarea.scrollLeft;
+  updateStats();
 }
 textarea.addEventListener('scroll', () => {
   hlPre.scrollTop  = textarea.scrollTop;
@@ -714,7 +819,7 @@ ul,ol{padding-left:1.6em;margin:.5em 0}li{margin:.25em 0}
 table{border-collapse:collapse;width:100%}td,th{border:1px solid #e5e7eb;padding:8px 12px}th{background:#f9fafb;font-weight:600}
 pre,code{font-family:monospace;background:#f3f4f6;padding:2px 6px;border-radius:4px}pre{padding:12px;overflow-x:auto}
 blockquote{border-left:3px solid #6366f1;margin:1em 0;padding:4px 16px;color:#6b7280}
-</style></head><body contenteditable="true" spellcheck="false">${body||''}</body></html>`;
+</style><\/head><body contenteditable="true" spellcheck="false">${body||''}<\/body><\/html>`;
 }
 
 // ─────────────────────────────────────────────
@@ -1101,7 +1206,7 @@ function handleFileOpen(e) {
 function saveFile() {
   lastSavedValue = textarea.value;
   const body = textarea.value || (fd ? fd.body.innerHTML : '');
-  const html = `<!DOCTYPE html>\n<html lang="vi">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Document</title>\n<style>\nbody{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.8;color:#1a1a2e;padding:20px 24px;margin:0}\nimg{max-width:100%;height:auto}\n</style>\n</head>\n<body>\n${body}\n</body>\n</html>`;
+  const html = `<!DOCTYPE html>\n<html lang="vi">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>Document</title>\n<style>\nbody{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.8;color:#1a1a2e;padding:20px 24px;margin:0}\nimg{max-width:100%;height:auto}\n<\/style>\n<\/head>\n<body>\n${body}\n<\/body>\n<\/html>`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([html],{type:'text/html;charset=utf-8'}));
   a.download='document.html'; a.click(); URL.revokeObjectURL(a.href);
