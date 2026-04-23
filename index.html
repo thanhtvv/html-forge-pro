@@ -7,6 +7,7 @@
 <title>HTMLForge Pro — Visual HTML Editor</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2224%22 fill=%22%230a84ff%22/><path d=%22M30 35 L15 50 L30 65 M70 35 L85 50 L70 65 M45 70 L55 30%22 fill=%22none%22 stroke=%22white%22 stroke-width=%2210%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/></svg>">
 <style>
 :root,[data-theme="light"]{
   --bg: linear-gradient(135deg, #e8eef7 0%, #d6e4f5 30%, #e2d9f3 65%, #d9eaf0 100%);
@@ -573,7 +574,7 @@ function esc(s) {
   return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 }
 function highlight(code) {
-  const parts = [], re = /<!--[\s\S]*?-->/g;
+  const parts = [], re = new RegExp('<\\!--[\\s\\S]*?--\\>', 'g');
   let last = 0, m;
   re.lastIndex = 0;
   while ((m = re.exec(code)) !== null) {
@@ -634,23 +635,83 @@ function openAllLinksModal() {
   allLinksCache = [];
   
   if (links.length === 0) {
-    listContainer.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Không có liên kết nào.</div>';
+    listContainer.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px">Không có liên kết nào trong bài viết.</div>';
   } else {
     links.forEach((a, idx) => {
       allLinksCache.push(a);
       const row = document.createElement('div');
-      row.style.cssText = 'display:flex;flex-direction:column;gap:6px;background:var(--glass-subtle);border:1px solid var(--glass-border2);padding:10px;border-radius:var(--radius-sm)';
-      const txtPreview = a.textContent.trim() || '(không có chữ)';
+      row.style.cssText = 'display:flex;flex-direction:column;gap:8px;background:var(--glass-subtle);border:1px solid var(--glass-border2);padding:14px;border-radius:var(--radius-lg)';
+      
+      const href = a.getAttribute('href') || '';
+      const text = a.textContent.trim();
+      const title = a.getAttribute('title') || '';
+      const isBlank = a.getAttribute('target') === '_blank';
+      const isStrong = !!a.querySelector('strong');
+
       row.innerHTML = `
-        <div style="font-size:11.5px;color:var(--text2);font-weight:600">Link ${idx + 1}: <span style="color:var(--text);font-weight:400">${txtPreview.length > 50 ? txtPreview.substring(0,50)+'...' : txtPreview}</span></div>
-        <div style="display:flex;gap:8px">
-          <input type="url" class="minput all-link-input" data-idx="${idx}" value="${a.getAttribute('href') || ''}" placeholder="https://..." style="margin-bottom:0;flex:1;padding:6px 10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+          <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.05em">Liên kết #${idx + 1}</div>
+          <div style="display:flex;gap:12px">
+             <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer">
+               <input type="checkbox" class="mck all-link-blank" data-idx="${idx}" ${isBlank ? 'checked' : ''}> _blank
+             </label>
+             <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);cursor:pointer">
+               <input type="checkbox" class="mck all-link-strong" data-idx="${idx}" ${isStrong ? 'checked' : ''}> Bold
+             </label>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <div>
+            <label class="mlabel" style="font-size:9px;margin-bottom:3px">Văn bản</label>
+            <input type="text" class="minput all-link-text" data-idx="${idx}" value="${text.replace(/"/g,'&quot;')}" placeholder="Văn bản hiển thị..." style="margin-bottom:0;padding:6px 10px;font-size:12px">
+          </div>
+          <div>
+            <label class="mlabel" style="font-size:9px;margin-bottom:3px">URL</label>
+            <input type="url" class="minput all-link-url" data-idx="${idx}" value="${href.replace(/"/g,'&quot;')}" placeholder="https://..." style="margin-bottom:0;padding:6px 10px;font-size:12px">
+          </div>
+        </div>
+        <div>
+          <label class="mlabel" style="font-size:9px;margin-bottom:3px">Tiêu đề (title)</label>
+          <input type="text" class="minput all-link-title" data-idx="${idx}" value="${title.replace(/"/g,'&quot;')}" placeholder="Mô tả khi hover..." style="margin-bottom:0;padding:6px 10px;font-size:12px">
         </div>
       `;
       listContainer.appendChild(row);
     });
+    // Add real-time check
+    listContainer.querySelectorAll('.all-link-url').forEach(input => {
+      input.addEventListener('input', checkAllLinksDuplicates);
+    });
+    checkAllLinksDuplicates();
   }
   document.getElementById('all-links-modal').classList.add('show');
+}
+
+function checkAllLinksDuplicates() {
+  const inputs = document.querySelectorAll('.all-link-url');
+  const urls = Array.from(inputs).map(i => i.value.trim().toLowerCase()).filter(v => v !== '' && v !== '#');
+  const counts = {};
+  urls.forEach(u => counts[u] = (counts[u] || 0) + 1);
+  
+  inputs.forEach(input => {
+    const val = input.value.trim().toLowerCase();
+    const row = input.parentElement.parentElement.parentElement; // div.row
+    if (val !== '' && val !== '#' && counts[val] > 1) {
+      row.style.borderColor = '#ff453a';
+      row.style.background = 'rgba(255, 69, 58, 0.08)';
+      if (!row.querySelector('.dup-tag')) {
+        const tag = document.createElement('div');
+        tag.className = 'dup-tag';
+        tag.style.cssText = 'font-size:10px;color:#ff453a;font-weight:700;margin-top:4px;display:flex;align-items:center;gap:4px';
+        tag.innerHTML = '<svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="5"/><line x1="6" y1="4" x2="6" y2="6"/><line x1="6" y1="8" x2="6.01" y2="8"/></svg> Trùng liên kết';
+        input.parentElement.appendChild(tag);
+      }
+    } else {
+      row.style.borderColor = 'var(--glass-border2)';
+      row.style.background = 'var(--glass-subtle)';
+      const tag = row.querySelector('.dup-tag');
+      if (tag) tag.remove();
+    }
+  });
 }
 
 function closeAllLinksModal() {
@@ -660,27 +721,47 @@ function closeAllLinksModal() {
 
 function saveAllLinksModal() {
   if (!fd) return;
-  const inputs = document.querySelectorAll('.all-link-input');
   let changed = false;
-  
   pushUndo();
-  inputs.forEach(input => {
-    const idx = parseInt(input.getAttribute('data-idx'));
-    const a = allLinksCache[idx];
-    const newHref = input.value.trim();
-    if (a && newHref !== (a.getAttribute('href') || '')) {
-      if (newHref) a.setAttribute('href', newHref);
-      else a.removeAttribute('href');
-      changed = true;
+
+  allLinksCache.forEach((a, idx) => {
+    const href = document.querySelector(`.all-link-url[data-idx="${idx}"]`).value.trim();
+    const text = document.querySelector(`.all-link-text[data-idx="${idx}"]`).value.trim();
+    const title = document.querySelector(`.all-link-title[data-idx="${idx}"]`).value.trim();
+    const isBlank = document.querySelector(`.all-link-blank[data-idx="${idx}"]`).checked;
+    const isStrong = document.querySelector(`.all-link-strong[data-idx="${idx}"]`).checked;
+
+    if (a) {
+      // Check href
+      if (href !== (a.getAttribute('href') || '')) {
+        if (href) a.setAttribute('href', href); else a.removeAttribute('href');
+        changed = true;
+      }
+      // Check title
+      if (title !== (a.getAttribute('title') || '')) {
+        if (title) a.setAttribute('title', title); else a.removeAttribute('title');
+        changed = true;
+      }
+      // Check target
+      if (isBlank !== (a.getAttribute('target') === '_blank')) {
+        if (isBlank) a.setAttribute('target', '_blank'); else a.removeAttribute('target');
+        changed = true;
+      }
+      // Check content & strong
+      const inner = isStrong ? `<strong>${text || href}</strong>` : (text || href);
+      if (a.innerHTML !== inner) {
+        a.innerHTML = inner;
+        changed = true;
+      }
     }
   });
-  
+
   if (changed) {
     withSyncLock(() => {
       sanitizeDOMAttrs(fd.body);
       const newVal = cleanHTML(fd.body.innerHTML);
-      pushUndo(newVal); 
-      textarea.value = newVal; 
+      pushUndo(newVal);
+      textarea.value = newVal;
       updateHL();
     });
     toast('Đã cập nhật tất cả links ✓');
@@ -1280,7 +1361,7 @@ function openLinkModal() {
     document.getElementById('m-url').value='';
     document.getElementById('m-title').value='';
     document.getElementById('m-blank').checked=true;
-    document.getElementById('m-strong').checked=!!st;
+    document.getElementById('m-strong').checked=false;
   }
   updLP();
   const isEdit=!!editingAnchor;
@@ -1813,7 +1894,7 @@ function processCleanNode(node) {
 function deepCleanHTML(raw) {
   // Parse as a full HTML doc then grab body content
   const doc = (new DOMParser()).parseFromString(
-    '<!DOCTYPE html><html><body>' + raw + '</body></html>', 'text/html'
+    '<!DOCTYPE html><html><body>' + raw + '<\/body><\/html>', 'text/html'
   );
   const body = doc.body;
   Array.from(body.childNodes).forEach(processCleanNode);
