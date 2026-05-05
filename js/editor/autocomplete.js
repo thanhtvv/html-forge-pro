@@ -28,7 +28,7 @@ export const SNIPS = [
   {tag:'blockquote',snip:'<blockquote>\n  $\n</blockquote>',hint:'Trích dẫn'},
   {tag:'pre',snip:'<pre>$</pre>',hint:'Code khối'},{tag:'code',snip:'<code>$</code>',hint:'Code inline'},
   {tag:'br',snip:'<br>',hint:'Xuống dòng'},{tag:'hr',snip:'<hr>',hint:'Đường kẻ'},
-  {tag:'figure',snip:'<figure>\n  <img src="$" alt="">\n  <figcaption></figcaption>\n</figure>',hint:'Hình+chú thích'},
+  {tag:'figure',snip:'<figure class="image">\n  <img src="$" alt="">\n  <figcaption></figcaption>\n</figure>',hint:'Hình+chú thích'},
   {tag:'section',snip:'<section>\n  $\n</section>',hint:'Section'},
   {tag:'article',snip:'<article>\n  $\n</article>',hint:'Article'},
   {tag:'nav',snip:'<nav>\n  $\n</nav>',hint:'Navigation'},

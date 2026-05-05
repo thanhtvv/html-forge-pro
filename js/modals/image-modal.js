@@ -29,7 +29,7 @@ export function buildImgHTML() {
   if (lazy) attrs += ' loading="lazy"';
   const imgTag = `<img ${attrs}>`;
   if (fig) {
-    return cap ? `<figure>\n  ${imgTag}\n  <figcaption>${cap}</figcaption>\n</figure>` : `<figure>\n  ${imgTag}\n</figure>`;
+    return cap ? `<figure class="image">\n  ${imgTag}\n  <figcaption>${cap}</figcaption>\n</figure>` : `<figure class="image">\n  ${imgTag}\n</figure>`;
   }
   return imgTag;
 }
