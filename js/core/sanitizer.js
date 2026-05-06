@@ -137,6 +137,10 @@ function processCleanNode(node) {
   }
   toRemove.forEach(n => node.removeAttribute(n));
 
+  if (tag === 'figure') {
+    node.setAttribute('class', 'image');
+  }
+
   if ((tag === 'span' || tag === 'div') &&
       node.attributes.length === 0 &&
       !node.textContent.trim() &&
