@@ -91,6 +91,7 @@ const TAG_ATTRS = {
   'blockquote':['cite'],
   'del':      ['datetime'],
   'ins':      ['datetime'],
+  'figure':   ['class'],
 };
 
 const SAFE_STYLE_PROPS = ['text-align','vertical-align'];
